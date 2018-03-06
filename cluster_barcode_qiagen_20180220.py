@@ -179,7 +179,7 @@ def consolidate(fastq_file, consolidate_fq_file, min_qual, min_freq,
 	logger_umi_process.info("Wrote %d consolidated reads to %s", 
 		num_consolidate_reads, consolidate_fq_file)
 	logger_umi_process.info("Successfully consolidated %d bases out of %d (%.2f%%)",
-		num_success, num_bases, 100*float(num_sucess)/num_bases)
+		num_success, num_bases, 100*float(num_success)/num_bases)
 
 def main():
 	(read1, read2, consolidate_read1, consolidate_read2, 

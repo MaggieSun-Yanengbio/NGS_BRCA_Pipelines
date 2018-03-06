@@ -192,6 +192,7 @@ def identify_gs_primers(samtools_dir, alignment_sam, primers_file, max_dist,
     sam = open(alignment_sam)
     ready = open(out_file, 'w')
     off_sam = open(alignment_sam+'.off', 'w')
+    nrow = 0
     while sam:
         row = sam.readline()
         if not row:
@@ -200,20 +201,19 @@ def identify_gs_primers(samtools_dir, alignment_sam, primers_file, max_dist,
             ready.write(row)
             continue
         num_total_alignments += 1
-
-        qname, flag, rname, pos, mapq, cigar, rmn, pmn, insl, seq = row.strip().split()[0:10]
+        #if num_total_alignments > 10000:
+        #    break
         mate = sam.readline()
-        if not mate:
-            break
+        qname, flag, rname, pos, mapq, cigar, rmn, pmn, insl, seq = row.strip().split()[0:10]
+        while qname != mate.split()[0]:
+            row = mate
+            qname, flag, rname, pos, mapq, cigar, rmn, pmn, insl, seq = row.strip().split()[0:10]
+            mate = sam.readline()
+
         if flag not in flag_eligible:
-            if int(flag) > 128:
-                flag_mate = mate.split()[1]
-                if flag_mate in flag_eligible:
-                    qname, flag, rname, pos, mapq, cigar, rmn, pmn, insl, seq = mate.strip().split()[0:10]
-                    row, mate = mate, row
-            else:    
-                num_unproper_pairs += 1
-                continue
+            #print([qname, flag, mate.split()[0], mate.split()[1]])
+            num_unproper_pairs += 1
+            continue
         
         chrom, start, stop = rname.split('_')
         pos = int(pos) + int(start) - 1
@@ -231,7 +231,6 @@ def identify_gs_primers(samtools_dir, alignment_sam, primers_file, max_dist,
                     pos_rv -= 30
                 else:
                     off = True
-                    sam.readline()
                     num_off_target += 1
                     continue
             for primer_info in primer_pos[chrom][pos_rv]:
@@ -291,7 +290,6 @@ def identify_gs_primers(samtools_dir, alignment_sam, primers_file, max_dist,
     stats_out.write('Number of off-target alignments == {0} ({1}%)\n'.format(num_off_target, ratio_off))
     stats_out.write('Number of on-target alignments == {0} ({1}%)\n'.format(num_on_target, ratio_on))
     stats_out.close()
-    #os.system('rm '+align_sam_tmp)
 
     #for read in off_target_reads:
     #    seq = off_target_reads[read]
