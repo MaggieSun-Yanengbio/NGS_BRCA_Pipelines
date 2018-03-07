@@ -46,44 +46,15 @@ def read_fq(filename):
 			l4 = f.readline()
 			yield [l1, l2, l3, l4]
 
-def get_umi(r1, r2):
-	names = r1[0].rstrip().split(' ')
-	barcode_seq, barcode_qual = names[2].split(';')
-	s1 = r1[1][0:6]
-	q1 = r1[3][0:6]
-	s2 = r2[1][0:6]
-	q2 = r2[3][0:6]
-	return '(%s_%s_%s;%s_%s_%s)' % (barcode_seq, s1, s2, barcode_qual, q1, q2)
-
 def umi_tagging(read1, read2, read1_out, read2_out, logger_umi_process, logger_umi_errors):
-	r1_umitagged_tmp = read1_out + '.tmp'
-	r2_umitagged_tmp = read2_out + '.tmp'
-	umi_r1 = open(r1_umitagged_tmp, 'w')
-	umi_r2 = open(r2_umitagged_tmp, 'w')
-	num_reads = 0
-
-	for r1, r2 in zip(read_fq(read1), read_fq(read2)):
-		molecular_id = get_umi(r1, r2)
-		r1[0] = '%s;%s\n' % (r1[0].rstrip().split(' ')[0], molecular_id)
-		r2[0] = '%s;%s\n' % (r2[0].rstrip().split(' ')[0], molecular_id)
-		for line in r1:
-			umi_r1.write(line.strip()+'\n')
-		for line in r2:
-			umi_r2.write(line.strip()+'\n')
-		num_reads += 1
-	umi_r1.close()
-	umi_r2.close()
-
+	
 	# Sort FASTQ files based on molecular barcodes.
-	cmd = 'cat '+r1_umitagged_tmp+' | paste - - - - | sort -k 3,3 -k 1,1 | tr "\t" "\n" > '+read1_out 
+	cmd = 'cat '+read1+' | paste - - - - | sort -k 3,3 -k 1,1 | tr "\t" "\n" > '+read1_out 
 	logger_umi_process.info(cmd)
 	subprocess.check_call(cmd, shell=True, env=os.environ.copy())
-	cmd = 'cat '+r2_umitagged_tmp+' | paste - - - - | sort -k 3,3 -k 1,1 | tr "\t" "\n" > '+read2_out
+	cmd = 'cat '+read2+' | paste - - - - | sort -k 3,3 -k 1,1 | tr "\t" "\n" > '+read2_out
 	logger_umi_process.info(cmd)
 	subprocess.check_call(cmd, shell=True, env=os.environ.copy())
-
-	os.remove(r1_umitagged_tmp)
-	os.remove(r2_umitagged_tmp)
 
 def edit_dist(s1, s2):
     matcher = SequenceMatcher(None, s1, s2)
@@ -91,7 +62,7 @@ def edit_dist(s1, s2):
     for tag, i1, i2, j1, j2 in matcher.get_opcodes():
         if tag == 'equal':
             dist -= (i2 + j2 - i1 -j1)
-        elif tag == 'relapce':
+        elif tag == 'replace':
         	dist -= (i2-i1)
     return dist
 
@@ -115,11 +86,13 @@ def read_bins(fastq_file):
 		seq = reads[ri+1]
 		qual = reads[ri+3]
 		num_read += 1
-		sample_id, molecular_id, umi_qual = header.strip().split(';')
+		sample_id, info, barcodes = header.strip().split(' ')
+		molecular_id = barcodes[0:12]
+		umi_qual = barcodes[13:]
 		qual = [str(ord(x)-33) for x in qual.strip()]
 		read = [header.rstrip(), seq.rstrip(),'+',qual]
 		i += 1
-		if edit_dist(molecular_id, cur_molecular_id) < 3:
+		if edit_dist(molecular_id, cur_molecular_id) < 2:
 			bin_reads.append(read)
 		else:
 			if cur_molecular_id != '':
@@ -160,6 +133,8 @@ def consolidate(fastq_file, consolidate_fq_file, min_qual, min_freq,
 
 	for cur_molecular_id, cur_sample_id, cur_umi_qual, reads in bins:
 		num_input_reads += len(reads)
+		if len(reads) < 5:
+			continue
 		num_consolidate_reads += 1
 		read_bases = zip(*[list(read[1]) for read in reads])
 		read_quals = zip(*[list(read[3]) for read in reads])
@@ -169,7 +144,10 @@ def consolidate(fastq_file, consolidate_fq_file, min_qual, min_freq,
 		])
 		num_success += sum(consolidation_success)
 		num_bases += len(consolidation_success)
-		consolidate.write('@%s;%s;%s\n' % (cur_sample_id, cur_molecular_id, cur_umi_qual))
+		num_Ns = len(consolidation_success) - sum(consolidation_success)
+		if num_Ns > 20:
+			continue
+		consolidate.write('%s;%s;%s\n' % (cur_sample_id, cur_molecular_id, cur_umi_qual))
 		consolidate.write(''.join(cons_seq)+'\n+\n')
 		consolidate.write(''.join([chr(q+33) for q in cons_qual])+'\n')
 	consolidate.close()
@@ -196,7 +174,7 @@ def main():
 	time_start = time.time()
 	read1_out = read1 + '_umi.fastq'
 	read2_out = read2 + '_umi.fastq'
-	# umi_tagging(read1, read2, read1_out, read2_out, logger_umi_process, logger_umi_errors)
+	#umi_tagging(read1, read2, read1_out, read2_out, logger_umi_process, logger_umi_errors)
 
 	consolidate(read1_out, consolidate_read1, min_qual, min_freq, 
 		logger_umi_process, logger_umi_errors)
