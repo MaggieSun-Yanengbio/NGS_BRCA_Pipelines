@@ -67,7 +67,7 @@ def edit_dist(s1, s2):
     return dist
 
 # Based on the molecular barcode tagged in the previous step, wrap up 
-# all reads having the most similar molecular barcodes (edit distance < 2).
+# all reads having the most similar molecular barcodes (edit distance < 1).
 # Returned values: the molecular ID corresponding to the barcode sequences ;
 #				   the sample ID, which is that of the very first reads;
 #				   the bins of reads of the similar barcodes.
@@ -92,7 +92,7 @@ def read_bins(fastq_file):
 		qual = [str(ord(x)-33) for x in qual.strip()]
 		read = [header.rstrip(), seq.rstrip(),'+',qual]
 		i += 1
-		if edit_dist(molecular_id, cur_molecular_id) < 2:
+		if edit_dist(molecular_id, cur_molecular_id) < 1:
 			bin_reads.append(read)
 		else:
 			if cur_molecular_id != '':
