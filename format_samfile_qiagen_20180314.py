@@ -1,7 +1,7 @@
 import sys
 import time
 
-# get overlap of R1.fastq and R2_fastq
+# get overlap of R1_fastq and R2_fastq
 def r1r2_overlap(r1_fastq,r2_fastq,collective):
     dic_f1 = {}
     with open(r1_fastq,'r') as f1:
