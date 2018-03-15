@@ -130,8 +130,15 @@ def consolidate(fastq_file, consolidate_fq_file, min_qual, min_freq,
 	num_consolidate_reads = 0
 	num_success = 0
 	num_bases = 0
+	out_barcode = open('all_barcode','w')
 
 	for cur_molecular_id, cur_sample_id, cur_umi_qual, reads in bins:
+		name_list = []
+		for read1 in reads:
+			name = read1[0]
+			name_list.append(name)
+		barcodelist = ','.join(name_list) + '\n'
+		out_barcode.write(barcodelist)
 		num_input_reads += len(reads)
 		if len(reads) < 5:
 			continue
