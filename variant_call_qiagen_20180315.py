@@ -33,7 +33,7 @@ def smCounter(smcounter,outPrefix,bamFile,bedTarget,mtDepth,rpb,minBQ,minMQ,hpLe
           ' --rpb ' + rpb + \
           ' --minBQ ' + minBQ + \
           ' --minMQ ' + minMQ + \
-          ' --hplen ' + hpLen + \
+          ' --hpLen ' + hpLen + \
           ' --mismatchThr ' + mismatchThr + \
           ' --mtDrop ' + mtDrop + \
           ' --threshold ' + threshold + \
