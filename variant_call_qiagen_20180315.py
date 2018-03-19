@@ -1,6 +1,7 @@
 # run smCounter to variant call
 import sys
 import os
+import time
 
 def add_header(head, samfile):
     cmd1 = 'cat ' + samfile + ' >> ' + head
@@ -9,7 +10,7 @@ def add_header(head, samfile):
     os.popen(cmd2)
     cmd3 = 'mv ' + head + ' ' + samfile
     os.popen(cmd3)
-    print ('add_header is complete.')
+    print ('add_header has been completed.')
 
 def sort_index(samfile,samtools):
     bam = samfile[:-3] + 'bam'
@@ -20,7 +21,7 @@ def sort_index(samfile,samtools):
     os.popen(cmd2)
     cmd3 = samtools + ' index ' + sorted
     os.popen(cmd3)
-    print ('sort_index is complete.')
+    print ('sort_index has been completed.')
     return sorted
 
 def smCounter(smcounter,outPrefix,bamFile,bedTarget,mtDepth,rpb,nCPU,minBQ,minMQ,hpLen,mismatchThr,
@@ -44,7 +45,7 @@ def smCounter(smcounter,outPrefix,bamFile,bedTarget,mtDepth,rpb,nCPU,minBQ,minMQ
           ' --bedtoolsPath ' + bedtoolsPath + \
           ' --logFile ' + logFile
     os.popen(cmd)
-    print ('smcounter is complete.')
+    print ('smcounter has been completed.')
 
 def main():
     (head,samfile,samtools,smcounter,outPrefix,bedTarget,mtDepth,rpb,nCPU,minBQ,minMQ,hpLen,mismatchThr,
