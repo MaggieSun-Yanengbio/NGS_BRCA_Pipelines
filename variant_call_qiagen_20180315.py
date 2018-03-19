@@ -48,12 +48,14 @@ def smCounter(smcounter,outPrefix,bamFile,bedTarget,mtDepth,rpb,nCPU,minBQ,minMQ
     print ('smcounter has been completed.')
 
 def main():
+    print ('start time is %s.'%time.ctime())
     (head,samfile,samtools,smcounter,outPrefix,bedTarget,mtDepth,rpb,nCPU,minBQ,minMQ,hpLen,mismatchThr,
      mtDrop,threshold,refGenome,bedTandemRepeats,bedRepeatMaskerSubset,bedtoolsPath,logFile) = sys.argv[1:]
     add_header(head,samfile)
     bam = sort_index(samfile,samtools)
     smCounter(smcounter,outPrefix,bam,bedTarget,mtDepth,rpb,nCPU,minBQ,minMQ,hpLen,mismatchThr,
               mtDrop,threshold,refGenome,bedTandemRepeats,bedRepeatMaskerSubset,bedtoolsPath,logFile)
+    print ('end time is %s.'%time.ctime())
 
 if __name__ == '__main__':
     main()
