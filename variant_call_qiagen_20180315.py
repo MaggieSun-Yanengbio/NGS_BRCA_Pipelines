@@ -21,7 +21,7 @@ def sort_index(samfile,samtools):
     cmd3 = samtools + ' index ' + sorted
     os.popen(cmd3)
     print ('sort_index is complete.')
-    return bam
+    return sorted
 
 def smCounter(smcounter,outPrefix,bamFile,bedTarget,mtDepth,rpb,minBQ,minMQ,hpLen,mismatchThr,
               mtDrop,threshold,refGenome,bedTandemRepeats,bedRepeatMaskerSubset,bedtoolsPath,logFile):
