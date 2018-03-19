@@ -329,9 +329,9 @@ def main():
     max_dist = 2
     out_file = source + sample_name + '_filtered.sam'
     time_start = time.time()
-    #filter_alignment_samtools(samtools_dir, alignment_sam, min_mapq, 
-    #                          max_soft_clip, out_file1, stats_file,
-    #                          logger_filter_process, logger_filter_errors)
+    filter_alignment_samtools(samtools_dir, alignment_sam, min_mapq, 
+                              max_soft_clip, out_file1, stats_file,
+                              logger_filter_process, logger_filter_errors)
     print('Time cost at samtools filtration == {0} min'.format((time.time()-time_start)/60))
     identify_gs_primers(samtools_dir, out_file1, primers_file, max_dist, out_file, 
                         primer_stats_file, stats_file,logger_filter_process, 
