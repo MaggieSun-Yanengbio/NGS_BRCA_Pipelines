@@ -23,7 +23,7 @@ def sort_index(samfile,samtools):
     print ('sort_index is complete.')
     return sorted
 
-def smCounter(smcounter,outPrefix,bamFile,bedTarget,mtDepth,rpb,minBQ,minMQ,hpLen,mismatchThr,
+def smCounter(smcounter,outPrefix,bamFile,bedTarget,mtDepth,rpb,nCPU,minBQ,minMQ,hpLen,mismatchThr,
               mtDrop,threshold,refGenome,bedTandemRepeats,bedRepeatMaskerSubset,bedtoolsPath,logFile):
     cmd = 'python2.7 ' + smcounter + \
           ' --outPrefix ' + outPrefix + \
@@ -31,6 +31,7 @@ def smCounter(smcounter,outPrefix,bamFile,bedTarget,mtDepth,rpb,minBQ,minMQ,hpLe
           ' --bedTarget ' +bedTarget + \
           ' --mtDepth ' + mtDepth + \
           ' --rpb ' + rpb + \
+          ' --nCPU ' + nCPU + \
           ' --minBQ ' + minBQ + \
           ' --minMQ ' + minMQ + \
           ' --hpLen ' + hpLen + \
@@ -46,11 +47,11 @@ def smCounter(smcounter,outPrefix,bamFile,bedTarget,mtDepth,rpb,minBQ,minMQ,hpLe
     print ('smcounter is complete.')
 
 def main():
-    (head,samfile,samtools,smcounter,outPrefix,bedTarget,mtDepth,rpb,minBQ,minMQ,hpLen,mismatchThr,
+    (head,samfile,samtools,smcounter,outPrefix,bedTarget,mtDepth,rpb,nCPU,minBQ,minMQ,hpLen,mismatchThr,
      mtDrop,threshold,refGenome,bedTandemRepeats,bedRepeatMaskerSubset,bedtoolsPath,logFile) = sys.argv[1:]
     add_header(head,samfile)
     bam = sort_index(samfile,samtools)
-    smCounter(smcounter,outPrefix,bam,bedTarget,mtDepth,rpb,minBQ,minMQ,hpLen,mismatchThr,
+    smCounter(smcounter,outPrefix,bam,bedTarget,mtDepth,rpb,nCPU,minBQ,minMQ,hpLen,mismatchThr,
               mtDrop,threshold,refGenome,bedTandemRepeats,bedRepeatMaskerSubset,bedtoolsPath,logFile)
 
 if __name__ == '__main__':
