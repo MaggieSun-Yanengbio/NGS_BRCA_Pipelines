@@ -3,15 +3,6 @@ import sys
 import os
 import time
 
-def add_header(head, samfile):
-    cmd1 = 'cat ' + samfile + ' >> ' + head
-    os.popen(cmd1)
-    cmd2 = 'rm ' + samfile
-    os.popen(cmd2)
-    cmd3 = 'mv ' + head + ' ' + samfile
-    os.popen(cmd3)
-    print ('add_header has been completed.')
-
 def sort_index(samfile,samtools):
     bam = samfile[:-3] + 'bam'
     cmd1 = samtools + ' view -b -S ' + samfile + ' > ' + bam
@@ -49,9 +40,12 @@ def smCounter(smcounter,outPrefix,bamFile,bedTarget,mtDepth,rpb,nCPU,minBQ,minMQ
 
 def main():
     print ('start time is %s.'%time.ctime())
-    (head,samfile,samtools,smcounter,outPrefix,bedTarget,mtDepth,rpb,nCPU,minBQ,minMQ,hpLen,mismatchThr,
-     mtDrop,threshold,refGenome,bedTandemRepeats,bedRepeatMaskerSubset,bedtoolsPath,logFile) = sys.argv[1:]
-    add_header(head,samfile)
+    (source,sample_name,samtools,smcounter,bedTarget,mtDepth,rpb,nCPU,minBQ,minMQ,hpLen,mismatchThr,
+     mtDrop,threshold,refGenome,bedTandemRepeats,bedRepeatMaskerSubset,bedtoolsPath) = sys.argv[1:]
+#    add_header(head,samfile)
+    outPrefix = source + sample_name + '_variant'
+    logFile = source + sample_name + '_logfile'
+    samfile = source + 'aligned/' + sample_name + '_vcready.sam'
     bam = sort_index(samfile,samtools)
     smCounter(smcounter,outPrefix,bam,bedTarget,mtDepth,rpb,nCPU,minBQ,minMQ,hpLen,mismatchThr,
               mtDrop,threshold,refGenome,bedTandemRepeats,bedRepeatMaskerSubset,bedtoolsPath,logFile)
@@ -59,3 +53,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
