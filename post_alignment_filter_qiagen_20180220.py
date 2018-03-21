@@ -314,7 +314,7 @@ def identify_gs_primers(samtools_dir, alignment_sam, primers_file, max_dist,
 
 def main():
     if len(sys.argv) < 5:
-        print('python3 post_alignment_filter_qiagen_20180220.py /path/to/input/ sample_name /path/to/samtools path/tp/primers.csv')
+        print('python3 post_alignment_filter_qiagen_20180220.py /path/to/input/ sample_name /path/to/samtools path/to/primers.csv')
         sys.exit("Error: Incorrect arguments!")
     source, sample_name, samtools_dir, primers_file = sys.argv[1:5]
     source += 'aligned/'
