@@ -18,7 +18,6 @@ primers="/home/administrator/source/DHS-001Z_primers_target.csv"
 min_consolidate_qual=10
 min_consolidate_freq=0.8
 smcounter="/home/administrator/smCounter/smCounter-master/smCounter.py"
-header="/home/administrator/source/header.sam"
 bedTarget="/home/administrator/source/DHS-001Z.covered-150bp.bed"
 mtDepth="3612"
 rpb="8.6"
@@ -55,4 +54,7 @@ do
   python3 $command_reformat_sam
   echo "5 Variant call"
   python3 $command_variant_call
+  echo "----------------------------------------------------------"
+  echo "sample $sample_name is OK."
+  echo "----------------------------------------------------------"
 done
