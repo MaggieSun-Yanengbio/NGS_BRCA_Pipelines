@@ -72,7 +72,7 @@ def annotation_variant(dict_cos,dict_clin,variant_vcf,annotated_vcf):
                 new += dict_cos[key] + '\n'
                 num_in_cosmic += 1
             else:
-                new += '-,-,-,-,-,-,-,-,-,-,-,-,-\n'
+                new += '-,-,-,-,-,-,-,-,-,-,-,-,-,-\n'
                 unmatch += 1
             # 2 databases both unmatch
             if unmatch == 2:
