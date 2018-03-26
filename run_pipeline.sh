@@ -5,6 +5,7 @@ filter="/home/administrator/pipeline/NGS_BRCA_Pipelines-master/post_alignment_fi
 cluster="/home/administrator/pipeline/NGS_BRCA_Pipelines-master/cluster_barcode_qiagen_20180320.py"
 reformat="/home/administrator/pipeline/NGS_BRCA_Pipelines-master/reformat_samfile_qiagen_20180320.py"
 variant_call="/home/administrator/pipeline/NGS_BRCA_Pipelines-master/variant_call_qiagen_20180315.py"
+annotate="/home/administrator/pipeline/NGS_BRCA_Pipelines-master/annotation_qiagen_20180322.py"
 
 source="/home/administrator/sample/"
 sample_names="S0721_05B_CHG029767-YN-171205-N701-TAAGGCGA S0721_05B_CHG029767-YN-171205-N703-AGGCAGAA S0721_05B_CHG029767-YN-171205-N707-CTCTCTAC S0721_05B_CHG029767-YN-171205-N711-AAGAGGCA S0721_05B_CHG029767-YN-171205-N715-ATCTCAGG"
@@ -32,6 +33,8 @@ refGenome="/home/administrator/source/hg19.fa"
 bedTandemRepeats="/home/administrator/smCounter/smCounter-master/simpleRepeat.bed"
 bedRepeatMaskerSubset="/home/administrator/smCounter/smCounter-master/SR_LC_SL.nochr.bed"
 bedtoolsPath="/usr/bin/"
+cosmic="/home/administrator/database/COSMIC_variant.csv"
+clinvar="/home/administrator/database/breast_cancer_variant_clinvar.csv"
 
 for sample_name in $sample_names
 do
@@ -41,7 +44,8 @@ do
   command_cluster="$cluster $source $sample_name $min_consolidate_qual $min_consolidate_freq"
   command_reformat_sam="$reformat $source $sample_name"
   command_variant_call="$variant_call $source $sample_name $samtools_dir $smcounter $bedTarget $mtDepth $rpb $nCPU $minBQ $minMQ $hpLen $mismatchThr $mtDrop $threshold $refGenome $bedTandemRepeats $bedRepeatMaskerSubset $bedtoolsPath"
-
+  command_annotate="$annotate $source $sample_name $cosmic $cilnvar"
+  
   echo "0 Trim"
   python3 $command_trim
   echo "1 Alignment"
@@ -54,6 +58,8 @@ do
   python3 $command_reformat_sam
   echo "5 Variant call"
   python3 $command_variant_call
+  echo "6 Annotate"
+  python3 $command_annotate
   echo "----------------------------------------------------------"
   echo "sample $sample_name is OK."
   echo "----------------------------------------------------------"
