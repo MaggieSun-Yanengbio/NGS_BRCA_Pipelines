@@ -92,7 +92,7 @@ def main():
     annotated_vcf = source + sample_name + '_annotated.vcf'
     dict_cos, dict_clin = read_database(cosmic,clinvar)
     annotation_variant(dict_cos,dict_clin,variant_vcf,annotated_vcf)
-    print('The time of used annotation is %s minutes.' % str((time.time() - time_start) / 60))
+    print('The time use to annotate is %s minutes.' % str((time.time() - time_start) / 60))
 
 if __name__ == '__main__':
     main()
