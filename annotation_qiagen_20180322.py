@@ -1,12 +1,39 @@
 import sys
 import time
 
+#INFO=<ID=TYPE,Number=1,Type=String,Description="Variant type: SNP or INDEL">
+#INFO=<ID=DP,Number=1,Type=Integer,Description="Total read depth">
+#INFO=<ID=MT,Number=1,Type=Integer,Description="Total MT depth">
+#INFO=<ID=UMT,Number=1,Type=Integer,Description="Filtered MT depth">
+#INFO=<ID=PI,Number=1,Type=Float,Description="Variant prediction index">
+#INFO=<ID=THR,Number=1,Type=Integer,Description="Variant prediction index minimum threshold">
+#INFO=<ID=VMT,Number=1,Type=Integer,Description="Variant MT depth">
+#INFO=<ID=VMF,Number=1,Type=Float,Description="Variant MT fraction">
+#INFO=<ID=VSM,Number=1,Type=Integer,Description="Variant strong MT depth">
+#FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
+#FORMAT=<ID=AD,Number=.,Type=Integer,Description="Filtered allelic MT depths for the ref and alt alleles">
+#FORMAT=<ID=VF,Number=1,Type=Float,Description="Variant MT fraction, same as VMF">
+#CLNDN--ClinVar`s preferred disease name for the concept specified by disease identifiers in CLNDISD.
+#HGVS--Top-level(primary assembly,alt,or patch) HGVS expression.
+#CLNSIG--Clinical significance for this single variant.
+#Mutation_Description--Type of mutation at the amino acid level (substitution, deletion, insertion, complex, fusion, unknown etc.)
+#Gene_CDS_Length--Length of the gene (base pair) counts.
+#Mutation_Zygosity--Information on whether the mutation was reported to be homozygous , heterozygous or unknown within the sample.
+#LOH--LOH Information on whether the gene was reported to have loss of heterozygosity in the sample: yes, no or unknown.
+#Mutation_Strand--postive or negative.
+#FATHMM_Prediction--Functional Analysis through Hidden Markov Models.
+#FATHMM_Score--The scores are in the form of pvalues ranging from 0 to 1. Pvalues greater than 0.5 are pathogenic
+             # while less than 0.5 are benign. Pvalues close to 0 or 1 are the high confidence results which
+             # are more accurate. The results are annotated as 10 feature groups (separately for coding and
+             #  non coding variants) details of which can be found in the original FATHMM-MKL paper.
+#Mutation_Somatic_Status--Information on whether the sample was reported to be Confirmed Somatic, Previously Reported or Variant of unknown origin.
+
 def read_database(cosmic,clinvar):
     cos = open(cosmic, 'r')
     dict_cos = {}
     cos.readline()
     for db1 in cos.readlines():
-        # if not db.startswith('Gene_name'):
+        # if not db1.startswith('Gene_name'):
         Gene_name, Accession_Number, Gene_CDS_length, HGNC_ID, Sample_name, ID_sample, ID_tumour, Primary_site, \
         Site_subtype1, Site_subtype2, Site_subtype3, Primary_histology, Histology_subtype1, Histology_subtype2, \
         Histology_subtype3, Genome_wide_screen, Mutation_ID, Mutation_CDS, Mutation_AA, Mutation_Description, \
