@@ -72,17 +72,10 @@ def annotation_variant(dict_cos,dict_clin,variant_vcf,annotated_vcf):
             chrom, pos, id, ref, alt, qual, filter, info, format, detail = line.strip().split('\t')
             chrom = chrom[3:]
             detail = detail.replace(',', ';')
-            # TYPE=SNP;DP=1178;MT=61;UMT=60;PI=115.34;THR=60;VMT=29;VMF=0.4833;VSM=21
-            type, dp, mt, umt, pi, thr, vmt, vmf, vsm = info.split(';')
-            type = type[type.find('=')+1:]
-            dp = dp[dp.find('=')+1:]
-            mt = mt[mt.find('=')+1:]
-            umt = umt[umt.find('=')+1:]
-            pi = pi[pi.find('=')+1:]
-            thr = thr[thr.find('=')+1:]
-            vmt = vmt[vmt.find('=')+1:]
-            vmf = vmf[vmf.find('=')+1:]
-            vsm = vsm[vsm.find('=')+1:]
+            # TYPE=SNP;DP=1178;MT=61;UMT=60;PI=115.34;THR=60;VMT=29;VMF=0.4833;VSM=2
+            def get_info(tag):
+                return tag[tag.find('=')+1:]
+            type, dp, mt, umt, pi, thr, vmt, vmf, vsm = map(get_info, info.split(';'))
             key = chrom + ',' + pos
             value = [chrom, pos, ref, alt, qual, filter, type, dp, mt, umt, pi, thr, vmt, vmf, vsm, format, detail]
             unmatch = 0
