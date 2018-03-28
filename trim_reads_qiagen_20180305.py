@@ -49,8 +49,27 @@ def read_fq(file_name, logger_trim_process, logger_trim_errors):
             l4 = str(f.readline(),'utf-8')
             yield [l1, l2, l3, l4]
 
-def trim_read_pairs(read1, read2, trimmed1, trimmed2, min_read_len, common_seq, stats_file,
-                    logger_trim_process, logger_trim_errors):
+def trim_read1(r1, common_seq2, mt_barcode):
+    l1 = len(r1[1].strip())
+    r1_end3 = r1[1].strip()[(l1-23):]
+    trim_seq = common_seq2+mt_barcode
+    for i in range(23):
+        if r1_end3[i:] == trim_seq[0:(23-i)]:
+            break
+    pos_trim_r1 = l1-23+i
+    return pos_trim_r1, [r1[0], r1[1].strip()[0:pos_trim_r1]+'\n', r1[2], r1[3].strip()[0:pos_trim_r1]+'\n']
+
+def trim_read2(r2, common_seq1):
+    l2 = len(r2[1].strip())
+    r2_end3 = r2[1].strip()[(l2-21):]
+    for i in range(21):
+        if r2_end3[i:] == common_seq1[0:(21-i)]:
+            break
+    pos_trim_r2 = l2-21+i
+    return pos_trim_r2, [r2[0], r2[1].strip()[0:pos_trim_r2]+'\n', r2[2], r2[3].strip()[0:pos_trim_r2]+'\n']
+
+def trim_read_pairs(read1, read2, trimmed1, trimmed2, min_read_len, common_seq1, 
+                    common_seq2, stats_file, logger_trim_process, logger_trim_errors):
     num_total_reads = 0
     num_short_reads = 0
     num_error_reads = 0
@@ -65,24 +84,27 @@ def trim_read_pairs(read1, read2, trimmed1, trimmed2, min_read_len, common_seq, 
             logger_trim_process.info("Error read pair: \n\t"
                 +'\t'.join(r1)+'\n\t'+'\t'.join(r2)+'\n')
         else:
-            start_common = r2[1].find(common_seq)
+            start_common = r2[1].find(common_seq2)
             if start_common < 12:
                 num_error_reads += 1
                 logger_trim_process.info("Error barcode/common seqs:"+str(start_common)+"\n\t"
                     +'\t'.join(r1)+'\n\t'+'\t'.join(r2)+'\n')
             else:
-                umi = r2[1][(start_common-12):start_common]+';'+r2[3][(start_common-12):start_common]
-                seq2 = r2[1][(start_common+11):]
-                qual2 = r2[3][(start_common+11):]
-                h1 = r1[0].strip()+' '+umi+'\n'
-                h2 = r2[0].strip()+' '+umi+'\n'
-                if len(seq2) < min_read_len:
+                umi = r2[1][(start_common-12):start_common]
+                r2[1] = r2[1][(start_common+11):]
+                r2[3] = r2[3][(start_common+11):]
+                pos_trim_r1, r1 = trim_read1(r1, common_seq2, umi)
+                pos_trim_r2, r2 = trim_read2(r2, common_seq1)
+                if pos_trim_r1 < min_read_len or pos_trim_r2 < min_read_len:
                     num_short_reads += 1
                     logger_trim_process.info("Short read pair: \n\t"
                         +'\t'.join(r1)+'\n\t'+'\t'.join(r2)+'\n')
-                else:                    
+                else:
+                    umi = umi+';'+r2[3][(start_common-12):start_common]
+                    h1 = r1[0].strip()+' '+umi+'\n'
+                    h2 = r2[0].strip()+' '+umi+'\n'
                     fout1.write(h1+r1[1]+r1[2]+r1[3])
-                    fout2.write(h2+seq2+r2[2]+qual2)
+                    fout2.write(h2+r2[1]+r2[2]+r2[3])
     fout1.close()
     fout2.close()
     print('Total number of reads == '+str(num_total_reads))
@@ -112,10 +134,12 @@ def main():
     trimmed1 = out_dir + sample + '_R1_undetermined.fastq'
     trimmed2 = out_dir + sample + '_R2_undetermined.fastq'
     stats_file = out_dir + sample + '_basic_stats.txt'
-    common_seq = 'ATTGGAGTCCT'
+    common_seq1 = 'CAAAACGCAATACTGTACATT'
+    common_seq2 = 'ATTGGAGTCCT'
     logger_trim_process, logger_trim_errors = store_logs(log_dir)
-    trim_read_pairs(read1, read2, trimmed1, trimmed2, min_read_len, common_seq, stats_file,
-        logger_trim_process, logger_trim_errors)
+    trim_read_pairs(read1, read2, trimmed1, trimmed2, min_read_len, 
+        common_seq1, common_seq2, stats_file, logger_trim_process, 
+        logger_trim_errors)
 
 if __name__ == '__main__':
     main()
