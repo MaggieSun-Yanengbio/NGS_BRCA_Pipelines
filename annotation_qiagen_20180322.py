@@ -55,6 +55,9 @@ def read_database(cosmic,clinvar):
         dict_clin[','.join(key2)] = ','.join(value2)
     return dict_cos,dict_clin
 
+def get_info(tag):
+    return tag[tag.find('=')+1:]
+
 def annotation_variant(dict_cos,dict_clin,variant_vcf,annotated_vcf):
     key_list = []
     key = ''
@@ -73,8 +76,6 @@ def annotation_variant(dict_cos,dict_clin,variant_vcf,annotated_vcf):
             chrom = chrom[3:]
             detail = detail.replace(',', ';')
             # TYPE=SNP;DP=1178;MT=61;UMT=60;PI=115.34;THR=60;VMT=29;VMF=0.4833;VSM=2
-            def get_info(tag):
-                return tag[tag.find('=')+1:]
             type, dp, mt, umt, pi, thr, vmt, vmf, vsm = map(get_info, info.split(';'))
             key = chrom + ',' + pos
             value = [chrom, pos, ref, alt, qual, filter, type, dp, mt, umt, pi, thr, vmt, vmf, vsm, format, detail]
