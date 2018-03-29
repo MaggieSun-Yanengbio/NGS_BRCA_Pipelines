@@ -39,7 +39,15 @@ def read_database(cosmic,clinvar):
         Histology_subtype3, Genome_wide_screen, Mutation_ID, Mutation_CDS, Mutation_AA, Mutation_Description, \
         Mutation_zygosity, LOH, GRCh, Chr, Start, End, Mutation_strand, SNP, Resistance_Mutation, FATHMM_prediction, \
         FATHMM_score, Mutation_somatic_status, Pubmed_PMID, ID_STUDY, Sample_source, Tumor_origin, Age = db1.strip().split(',')
-        key1 = [Chr, Start]
+        if Mutation_CDS is 'NS':
+            continue
+        if 'del' in Mutation_CDS:
+            Change = Mutation_CDS[Mutation_CDS.find('del'):]
+        elif 'ins' in Mutation_CDS:
+            Change = Mutation_CDS[Mutation_CDS.find('ins'):]
+        elif '>' in Mutation_CDS:
+            Change = Mutation_CDS[Mutation_CDS.find('>')-1:]
+        key1 = [Chr, Start ,Change]
         value1 = [HGNC_ID, Mutation_ID, Mutation_Description, Accession_Number, Gene_name, Gene_CDS_length,
                   Mutation_zygosity, LOH, Mutation_strand, Mutation_CDS, Mutation_AA, FATHMM_prediction, FATHMM_score,
                   Mutation_somatic_status]
@@ -50,7 +58,15 @@ def read_database(cosmic,clinvar):
     for db2 in clin.readlines():
         genename, chr, start, end, geneid, alleleid, rs, pos, reference_seq, variant_seq, af_esp, af_exac, af_tgp, \
         clndn, clnhgvs, clnsig = db2.strip().split(',')
-        key2 = [chr, pos]
+        if len(ref) == len(alt):
+            change = ref + '>' + alt
+        elif len(ref) > len(alt) and len(alt) == 1:
+            change = 'del' + ref[1:]
+        elif len(ref) < len(alt) and len(ref) == 1:
+            change = 'ins' + alt[1:]
+        else:
+            change = 'del' + ref + 'ins' + alt
+        key2 = [chr, pos, change]
         value2 = [rs, geneid, clndn, clnhgvs, clnsig]
         dict_clin[','.join(key2)] = ','.join(value2)
     return dict_cos,dict_clin
@@ -75,9 +91,17 @@ def annotation_variant(dict_cos,dict_clin,variant_vcf,annotated_vcf):
             chrom, pos, id, ref, alt, qual, filter, info, format, detail = line.strip().split('\t')
             chrom = chrom[3:]
             detail = detail.replace(',', ';')
+            if len(ref) == len(alt):
+                change = ref + '>' + alt
+            elif len(ref) > len(alt) and len(alt) == 1:
+                change = 'del' + ref[1:]
+            elif len(ref) < len(alt) and len(ref) == 1:
+                change = 'ins' + alt[1:]
+            else:
+                change = 'del' + ref + 'ins' + alt
+            key = chrom + ',' + pos + ',' + change
             # TYPE=SNP;DP=1178;MT=61;UMT=60;PI=115.34;THR=60;VMT=29;VMF=0.4833;VSM=2
             type, dp, mt, umt, pi, thr, vmt, vmf, vsm = map(get_info, info.split(';'))
-            key = chrom + ',' + pos
             value = [chrom, pos, ref, alt, qual, filter, type, dp, mt, umt, pi, thr, vmt, vmf, vsm, format, detail]
             unmatch = 0
             # drop duplicate variant
@@ -98,9 +122,9 @@ def annotation_variant(dict_cos,dict_clin,variant_vcf,annotated_vcf):
             # 2 databases both unmatch
             if unmatch == 2:
                 num_unmatch += 1
-                continue
-            output.write(new)
-        key_list.append(key)
+            else:
+                output.write(new)
+            key_list.append(key)
     print ('The sample has %s variants.' % len(key_list))
     print ('%s variants in COSMIC database' % num_in_cosmic)
     print ('%s variants in Clinvar database' % num_in_clinvar)
