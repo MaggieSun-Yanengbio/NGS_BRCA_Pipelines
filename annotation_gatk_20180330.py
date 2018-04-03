@@ -26,6 +26,7 @@
 # Mutation_Somatic_Status--Information on whether the sample was reported to be Confirmed Somatic, Previously Reported or Variant of unknown origin.
 import sys
 import time
+import pandas as pd
 
 def read_database(cosmic,clinvar):
     cos = open(cosmic, 'r')
@@ -47,7 +48,7 @@ def read_database(cosmic,clinvar):
         elif '>' in Mutation_CDS:
             Change = Mutation_CDS[Mutation_CDS.find('>')-1:]
         key1 = [Chr, Start ,Change]
-        value1 = [HGNC_ID, Mutation_ID, Mutation_Description, Accession_Number, Gene_name, Gene_CDS_length,
+        value1 = [Mutation_ID, Mutation_Description, Accession_Number, Gene_name, Gene_CDS_length,
                   Mutation_zygosity, LOH, Mutation_strand, Mutation_CDS, Mutation_AA, FATHMM_prediction, FATHMM_score,
                   Mutation_somatic_status]
         dict_cos[','.join(key1)] = ','.join(value1)
@@ -66,7 +67,7 @@ def read_database(cosmic,clinvar):
         else:
             change = 'del' + ref + 'ins' + alt
         key2 = [chr, pos, change]
-        value2 = [rs, geneid, clndn, clnhgvs, clnsig]
+        value2 = [geneid, rs, clndn, clnhgvs, clnsig]
         dict_clin[','.join(key2)] = ','.join(value2)
     return dict_cos,dict_clin
 
@@ -84,15 +85,15 @@ def split_variant(line):
     num_mt = len(alt.split(','))
     af = detail.split(':')[2]
     if num_mt is 1:
-        return [[chrom, pos, id, ref, alt, qual, filter, dp, ecnt, pop_af, p_germline, tlod, af]]
+        return [[chrom, pos, ref, alt, filter, dp, ecnt, pop_af, p_germline, tlod, af]]
     elif num_mt is 2:
         alt1, alt2 = alt.split(',')
         pop_af1, pop_af2 = pop_af.split(',')
         p_germline1, p_germline2 = p_germline.split(',')
         tlod1, tlod2 = tlod.split(',')
         af1, af2 = af.split(',')
-        return [[chrom, pos, id, ref, alt1, qual, filter, dp, ecnt, pop_af1, p_germline1, tlod1, af1],
-                [chrom, pos, id, ref, alt2, qual, filter, dp, ecnt, pop_af2, p_germline2, tlod2, af2]
+        return [[chrom, pos, ref, alt1, filter, dp, ecnt, pop_af1, p_germline1, tlod1, af1],
+                [chrom, pos, ref, alt2, filter, dp, ecnt, pop_af2, p_germline2, tlod2, af2]
                 ]
     elif num_mt is 3:
         alt1, alt2, alt3 = alt.split(',')
@@ -100,9 +101,9 @@ def split_variant(line):
         p_germline1, p_germline2, p_germline3 = p_germline.split(',')
         tlod1, tlod2, tlod3 = tlod.split(',')
         af1, af2, af3 = af.split(',')
-        return [[chrom, pos, id, ref, alt1, qual, filter, dp, ecnt, pop_af1, p_germline1, tlod1, af1],
-                [chrom, pos, id, ref, alt2, qual, filter, dp, ecnt, pop_af2, p_germline2, tlod2, af2],
-                [chrom, pos, id, ref, alt3, qual, filter, dp, ecnt, pop_af3, p_germline3, tlod3, af3]
+        return [[chrom, pos, ref, alt1, filter, dp, ecnt, pop_af1, p_germline1, tlod1, af1],
+                [chrom, pos, ref, alt2, filter, dp, ecnt, pop_af2, p_germline2, tlod2, af2],
+                [chrom, pos, ref, alt3, filter, dp, ecnt, pop_af3, p_germline3, tlod3, af3]
                 ]
     else:
         alt1, alt2, alt3, alt4 = alt.split(',')
@@ -110,10 +111,10 @@ def split_variant(line):
         p_germline1, p_germline2, p_germline3, p_germline4 = p_germline.split(',')
         tlod1, tlod2, tlod3, tlod4 = tlod.split(',')
         af1, af2, af3, af4 = af.split(',')
-        return [[chrom, pos, id, ref, alt1, qual, filter, dp, ecnt, pop_af1, p_germline1, tlod1, af1],
-                [chrom, pos, id, ref, alt2, qual, filter, dp, ecnt, pop_af2, p_germline2, tlod2, af2],
-                [chrom, pos, id, ref, alt3, qual, filter, dp, ecnt, pop_af3, p_germline3, tlod3, af3],
-                [chrom, pos, id, ref, alt4, qual, filter, dp, ecnt, pop_af4, p_germline4, tlod4, af4]
+        return [[chrom, pos, ref, alt1, filter, dp, ecnt, pop_af1, p_germline1, tlod1, af1],
+                [chrom, pos, ref, alt2, filter, dp, ecnt, pop_af2, p_germline2, tlod2, af2],
+                [chrom, pos, ref, alt3, filter, dp, ecnt, pop_af3, p_germline3, tlod3, af3],
+                [chrom, pos, ref, alt4, filter, dp, ecnt, pop_af4, p_germline4, tlod4, af4]
                 ]
 
 def annotation(dict_cos,dict_clin,variant_vcf,annotated_csv):
@@ -125,13 +126,13 @@ def annotation(dict_cos,dict_clin,variant_vcf,annotated_csv):
     var = open(variant_vcf, 'r')
     output = open(annotated_csv, 'w')
     output.write(
-        'CHR,POS,ID,REF,ALT,QUAL,FILTER,DP,ECNT,POP_AF,P_GERMLINE,TLOD,AF,RS_ID,Gene_ID,CLNDN,HGVS,CLNSIG,'
-        'HGNC_ID,COSMIC_ID,Mutation_Description,Feature_ID,Gene_Name,Gene_CDS_Length,Mutation_Zygosity,LOH,Mutation_Strand,'
+        'CHR,POS,REF,ALT,FILTER,DP,ECNT,POP_AF,P_GERMLINE,TLOD,AF,Gene_ID,RS_ID,CLNDN,HGVS,CLNSIG,'
+        'COSMIC_ID,Mutation_Description,Feature_ID,Gene_Name,Gene_CDS_Length,Mutation_Zygosity,LOH,Mutation_Strand,'
         'HGVS.c,HGVS.p,FATHMM_Prediction,FATHMM_Score,Mutation_Somatic_Status\n')
     for line in var:
         if not line.startswith('#'):
             for spl in split_variant(line):
-                chrom, pos, id, ref, alt, qual, filter, dp, ecnt, pop_af, p_germline, tlod, af = spl
+                chrom, pos, ref, alt, filter, dp, ecnt, pop_af, p_germline, tlod, af = spl
                 chrom = chrom[3:]
                 if len(ref) == len(alt):
                     change = ref + '>' + alt
@@ -142,7 +143,7 @@ def annotation(dict_cos,dict_clin,variant_vcf,annotated_csv):
                 else:
                     change = 'del' + ref + 'ins' + alt
                 key = chrom + ',' + pos + ',' + change
-                value = [chrom, pos, id, ref, alt, qual, filter, dp, ecnt, pop_af, p_germline, tlod, af]
+                value = [chrom, pos, ref, alt, filter, dp, ecnt, pop_af, p_germline, tlod, af]
                 unmatch = 0
                 # drop duplicate variant
                 if key in key_list:
@@ -157,7 +158,7 @@ def annotation(dict_cos,dict_clin,variant_vcf,annotated_csv):
                     new += dict_cos[key] + '\n'
                     num_in_cosmic += 1
                 else:
-                    new += '-,-,-,-,-,-,-,-,-,-,-,-,-,-\n'
+                    new += '-,-,-,-,-,-,-,-,-,-,-,-,-\n'
                     unmatch += 1
                 # 2 databases both unmatch
                 if unmatch == 2:
@@ -170,13 +171,45 @@ def annotation(dict_cos,dict_clin,variant_vcf,annotated_csv):
     print ('%s variants in Clinvar database' % num_in_clinvar)
     print ('%s variants unmatch in cosmic and clinvar.' % num_unmatch)
 
+def fill_table(annotated_csv,geneid):
+    dict1 = {}
+    dict2 = {}
+    dict3 = {}
+    f1 = open(geneid,'r')
+    for i in f1.readlines():
+        a1,a2,a3 = i.strip().split(',')
+        dict1[a2] = a1
+        dict2[a2] = a3
+        dict3[a1] = a2
+    df = pd.read_csv(annotated_csv)
+    subframe = df[['Gene_Name','Gene_ID','Feature_ID']]
+    #for name,id,transcript in subframe.iterrows():
+    for i in range(0, len(subframe)):
+        #subframe.iloc[i]['Gene_Name'], subframe.iloc[i]['Gene_ID'], subframe.iloc[i]['Feature_ID']
+        if subframe.iloc[i]['Gene_Name'] is '-' and subframe.iloc[i]['Feature_ID'] is '-':
+            subframe.iloc[i]['Gene_Name'] = dict1[subframe.iloc[i]['Gene_ID']]
+            subframe.iloc[i]['Feature_ID'] = dict2[subframe.iloc[i]['Gene_ID']]
+        elif subframe.iloc[i]['Gene_ID'] is '-':
+            subframe.iloc[i]['Gene_ID'] = dict3[subframe.iloc[i]['Gene_Name']]
+    name = subframe['Gene_Name']
+    ensg = subframe['Gene_ID']
+    enst = subframe['Feature_ID']
+    df.drop(labels=['Gene_Name'], axis=1, inplace=True)
+    df.drop(labels=['Gene_ID'], axis=1, inplace=True)
+    df.drop(labels=['Feature_ID'], axis=1, inplace=True)
+    df.insert(11, 'Gene_Name', name)
+    df.insert(12, 'Gene_ID', ensg)
+    df.insert(13, 'Feature_ID', enst)
+    df.to_csv(annotated_csv, index=False, sep=',')
+
 def main():
     time_start = time.time()
-    (source, sample_name, cosmic, clinvar) = sys.argv[1:]
+    (source, sample_name, cosmic, clinvar, geneid) = sys.argv[1:]
     variant_vcf = source + sample_name + '_variant_filtered.vcf'
     annotated_csv = source + sample_name + '_annotated.csv'
     dict_cos, dict_clin = read_database(cosmic,clinvar)
     annotation(dict_cos,dict_clin,variant_vcf,annotated_csv)
+    fill_table(annotated_csv,geneid)
     print('The time of used annotation is %s minutes.' % str((time.time() - time_start) / 60))
 
 if __name__ == '__main__':
