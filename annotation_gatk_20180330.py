@@ -171,26 +171,27 @@ def annotation(dict_cos,dict_clin,variant_vcf,annotated_csv):
     print ('%s variants in Clinvar database' % num_in_clinvar)
     print ('%s variants unmatch in cosmic and clinvar.' % num_unmatch)
 
+#match genename,ENSG and ENST from ensembl.
 def fill_table(annotated_csv,geneid):
-    dict1 = {}
-    dict2 = {}
-    dict3 = {}
+    g2n = {}
+    g2t = {}
+    n2i = {}
     f1 = open(geneid,'r')
-    for i in f1.readlines():
-        a1,a2,a3 = i.strip().split(',')
-        dict1[a2] = a1
-        dict2[a2] = a3
-        dict3[a1] = a2
+    for line in f1.readlines():
+        l1,l2,l3 = line.strip().split(',')
+        g2n[l2] = l1
+        g2t[l2] = l3
+        n2i[l1] = l2
     df = pd.read_csv(annotated_csv)
     subframe = df[['Gene_Name','Gene_ID','Feature_ID']]
     #for name,id,transcript in subframe.iterrows():
-    for i in range(0, len(subframe)):
+    for num in range(0, len(subframe)):
         #subframe.iloc[i]['Gene_Name'], subframe.iloc[i]['Gene_ID'], subframe.iloc[i]['Feature_ID']
-        if subframe.iloc[i]['Gene_Name'] is '-' and subframe.iloc[i]['Feature_ID'] is '-':
-            subframe.iloc[i]['Gene_Name'] = dict1[subframe.iloc[i]['Gene_ID']]
-            subframe.iloc[i]['Feature_ID'] = dict2[subframe.iloc[i]['Gene_ID']]
-        elif subframe.iloc[i]['Gene_ID'] is '-':
-            subframe.iloc[i]['Gene_ID'] = dict3[subframe.iloc[i]['Gene_Name']]
+        if subframe.iloc[num]['Gene_Name'] is '-' and subframe.iloc[num]['Feature_ID'] is '-':
+            subframe.iloc[num]['Gene_Name'] = g2n[subframe.iloc[num]['Gene_ID']]
+            subframe.iloc[num]['Feature_ID'] = g2t[subframe.iloc[num]['Gene_ID']]
+        elif subframe.iloc[num]['Gene_ID'] is '-':
+            subframe.iloc[num]['Gene_ID'] = n2i[subframe.iloc[num]['Gene_Name']]
     name = subframe['Gene_Name']
     ensg = subframe['Gene_ID']
     enst = subframe['Feature_ID']
