@@ -172,11 +172,11 @@ def annotation(dict_cos,dict_clin,variant_vcf,annotated_csv):
     print ('%s variants unmatch in cosmic and clinvar.' % num_unmatch)
 
 #match genename,ENSG and ENST from ensembl.
-def fill_table(annotated_csv,geneid):
+def fill_table(annotated_csv,ref_ens):
     g2n = {}
     g2t = {}
     n2i = {}
-    f1 = open(geneid,'r')
+    f1 = open(ref_ens,'r')
     for line in f1.readlines():
         l1,l2,l3 = line.strip().split(',')
         g2n[l2] = l1
@@ -205,12 +205,12 @@ def fill_table(annotated_csv,geneid):
 
 def main():
     time_start = time.time()
-    (source, sample_name, cosmic, clinvar, geneid) = sys.argv[1:]
+    (source, sample_name, cosmic, clinvar, ref_ens) = sys.argv[1:]
     variant_vcf = source + sample_name + '_variant_filtered.vcf'
     annotated_csv = source + sample_name + '_annotated.csv'
     dict_cos, dict_clin = read_database(cosmic,clinvar)
     annotation(dict_cos,dict_clin,variant_vcf,annotated_csv)
-    fill_table(annotated_csv,geneid)
+    fill_table(annotated_csv,ref_ens)
     print('The time of used annotation is %s minutes.' % str((time.time() - time_start) / 60))
 
 if __name__ == '__main__':
