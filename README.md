@@ -14,3 +14,5 @@ Steps to run the pipeline scripts:
 5 reformat the alignment sam file, converting the position-related columns to chromosome-wise locations.
 
 6 call variants by employing smCounter.
+
+7 annotate by clinvar and cosmic databases.
