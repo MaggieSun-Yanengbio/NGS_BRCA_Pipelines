@@ -43,7 +43,8 @@ def Mutect2_call(recal_bam,raw_variant,variant_filtered,gatk,genome,sample):
 def main():
     source, sample, gatk, samtools, genome = sys.argv[1:6]
     knownsites = sys.argv[6:]
-    samfile = source + sample + '_filtered.sam'
+    source += 'aligned/'
+    samfile = source + sample + '_formated.sam'
     sorted = source + sample + '_sorted.sam'
     bam = source + sample + '_sorted.bam'
     markdups = source + sample + '_dups_marked.bam'
