@@ -10,7 +10,7 @@ annotate="/home/administrator/pipeline/NGS_BRCA_Pipelines-master/annotation_qiag
 source="/home/administrator/sample/"
 sample_names="S0721_05B_CHG029767-YN-171205-N701-TAAGGCGA S0721_05B_CHG029767-YN-171205-N703-AGGCAGAA S0721_05B_CHG029767-YN-171205-N707-CTCTCTAC S0721_05B_CHG029767-YN-171205-N711-AAGAGGCA S0721_05B_CHG029767-YN-171205-N715-ATCTCAGG"
 tail_name="L003"
-out_dir="trimmed_"
+out_dir="undetermined/"
 bwa_dir="bwa"
 index_name="/home/administrator/source/index"
 ref_fa_file="/home/administrator/source/target_breast.refSeq.fa"
@@ -20,21 +20,23 @@ min_consolidate_qual=10
 min_consolidate_freq=0.8
 smcounter="/home/administrator/smCounter/smCounter-master/smCounter.py"
 bedTarget="/home/administrator/source/DHS-001Z.covered-150bp.bed"
-mtDepth="3612"
+mtDepth="300"
 rpb="8.6"
 nCPU="16"
 minBQ="20"
 minMQ="30"
 hpLen="8"
 mismatchThr="6"
-mtDrop="1"
-threshold="60"
+mtDrop="0"
+threshold="15"
 refGenome="/home/administrator/source/hg19.fa"
 bedTandemRepeats="/home/administrator/smCounter/smCounter-master/simpleRepeat.bed"
 bedRepeatMaskerSubset="/home/administrator/smCounter/smCounter-master/SR_LC_SL.nochr.bed"
 bedtoolsPath="/usr/bin/"
 cosmic="/home/administrator/database/COSMIC_variant.csv"
 clinvar="/home/administrator/database/breast_cancer_variant_clinvar.csv"
+g1000="/home/administrator/database/breast_cancer_variant_1000genomes.csv"
+ref_ens="/home/administrator/source/geneid_cancer_qiagen.csv"
 
 for sample_name in $sample_names
 do
@@ -44,7 +46,7 @@ do
   command_cluster="$cluster $source $sample_name $min_consolidate_qual $min_consolidate_freq"
   command_reformat_sam="$reformat $source $sample_name"
   command_variant_call="$variant_call $source $sample_name $samtools_dir $smcounter $bedTarget $mtDepth $rpb $nCPU $minBQ $minMQ $hpLen $mismatchThr $mtDrop $threshold $refGenome $bedTandemRepeats $bedRepeatMaskerSubset $bedtoolsPath"
-  command_annotate="$annotate $source $sample_name $cosmic $cilnvar"
+  command_annotate="$annotate $source $sample_name $cosmic $cilnvar $g1000 $ref_ens"
   
   echo "0 Trim"
   python3 $command_trim
