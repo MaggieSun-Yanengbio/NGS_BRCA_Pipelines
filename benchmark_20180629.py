@@ -241,6 +241,9 @@ def main():
                        samtools, varscan, path, sample, str(rate))
                 depth_true = getNewVariants(outPrefix+'.smCounter.cut.vcf', variant_filtered, path+sample+'_snp_'+str(rate), variants_list, detail_table, rate, sample, depth_true)
                 cycle += 1
+                print ('***********************************************************')
+                print ('Sample:%s, Rate:%s\nCycle %s finish.'%(sample, rate, cycle))
+                print ('***********************************************************')
 
             for variant, software_to_option in depth_true.items():
                 chrom, pos, ref, alt = variant
