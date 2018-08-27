@@ -41,7 +41,7 @@ g1000 = '/home/administrator/database/1000genomes_breast_93genes.csv'
 def main():
     # raw data qc parameters
     qc_dir = source + 'rawdata_qc'
-        # raw data qc process
+    # raw data qc process
     if not os.path.exists(qc_dir):
         os.makedirs(qc_dir)
     qc_result1, qc_result2 = qc_raw_reads(fastqc_path, qc_dir, sample, read1, read2,)
@@ -53,6 +53,9 @@ def main():
     raw_q20 = round(np.mean([float(q20_r1[:-1]), float(q30_r1[:-1])]), 3)
     raw_q30 = round(np.mean([float(q20_r2[:-1]), float(q30_r2[:-1])]), 3)
 
+    print('#################################')
+    print('1.raw data qc finish.')
+    print('#################################')
 
     # trim parameters
     out_dir = 'undetermined/'
@@ -71,6 +74,9 @@ def main():
         trim_read_pairs(read1, read2, trimmed1, trimmed2, min_read_len, common_seq1, common_seq2,
                         trim_stats_file, logger_trim_process, logger_trim_errors)
 
+    print('#################################')
+    print('2.trim finish.')
+    print('#################################')
 
     # clean data qc parameters
     qc_dir = source + 'cleandata_qc'
@@ -86,9 +92,12 @@ def main():
     clean_q20 = round(np.mean([float(q20_r1[:-1]), float(q30_r1[:-1])]), 3)
     clean_q30 = round(np.mean([float(q20_r2[:-1]), float(q30_r2[:-1])]), 3)
 
+    print('#################################')
+    print('3.clean data qc finish.')
+    print('#################################')
 
     # parameter alignment
-    out_file = source + 'aligned/' + sample + '_aligned.sam'
+    alignment_sam = source + 'aligned/' + sample + '_aligned.sam'
     log_dir = source + 'aligned/log/'
     num_threads = 4
     # alignment process
@@ -101,19 +110,21 @@ def main():
             length_target_region += int(end) - int(start)
     logger_bwa_process, logger_bwa_errors = store_logs(log_dir)
     align_reads_bwa(bwa_path, ref_fasta, index_name, trimmed1, trimmed2,
-                    out_file, num_threads, logger_bwa_process, logger_bwa_errors)
+                    alignment_sam, num_threads, logger_bwa_process, logger_bwa_errors)
 
+    print('#################################')
+    print('4.align finish.')
+    print('#################################')
 
     # filter parameters
     log_dir = source + 'aligned/log/'
-    alignment_sam = source + 'aligned/' + sample + '_aligned.sam'
     min_mapq = 17
     max_soft_clip = 10
     out_file1 = source + 'aligned/' + sample + '_tmp.sam'
     filter_stats_file = source + 'aligned/' + sample + '_align_stats.txt'
     primer_stats_file = source + 'aligned/' + sample + '_primer_stats.csv'
     max_dist = 2
-    out_file = source + 'aligned/' + sample + '_filtered.sam'
+    filter_sam = source + 'aligned/' + sample + '_filtered.sam'
     # filter process
     logger_filter_process, logger_filter_errors = store_logs(log_dir)
     (num_sec, num_unmap, min_mapq, num_low_mapq, final_count, percentage_filter_reads) = \
@@ -123,25 +134,26 @@ def main():
     (num_unproper_pairs, num_primers, num_off_target, ratio_off, num_on_target, ratio_on, num_target_primers, mean_rdp,
      num_primers_5mean_rdp, num_primers_25mean_rdp, num_primers_50mean_rdp, num_primers_75mean_rdp, num_primers_mean_rdp,
      mean_mdp, num_primers_5mean_mdp, num_primers_25mean_mdp, num_primers_50mean_mdp, num_primers_75mean_mdp, num_primers_mean_mdp
-     )= identify_gs_primers(samtools_path, out_file1, primers, max_dist, out_file,
+     )= identify_gs_primers(samtools_path, out_file1, primers, max_dist, filter_sam,
                             filter_stats_file, primer_stats_file, logger_filter_process,
                             logger_filter_errors)
 
+    print('#################################')
+    print('5.filter finish.')
+    print('#################################')
+
     # umi cluster parameters
-    filein_sam = source + 'aligned/' + sample + '_filtered.sam'
-    filein_bam = source + 'aligned/' + sample + '_filtered.bam'
+    filter_bam = source + 'aligned/' + sample + '_filtered.bam'
     sorted_bam = source + 'aligned/' + sample + '_filtered_sorted.bam'
     clustered_bam = source + 'aligned/' + sample + '_clustered.bam'
     clustered_sam = source + 'aligned/' + sample + '_clustered.sam'
     stats = source + 'aligned/' + sample + '_deduplicated'
     coverage_file = source + 'aligned/' + sample + '_coverage.tsv'
     # umi cluster process
-    (total_num_bases, mean_bd, min_bd, max_bd, num_50x, num_100x, num_200x, num_500x,
-     num_5mean, num_25mean, num_50mean, num_75mean, num_mean) \
-        = stats_target_bases(samtools_path, sorted_bam, ref_bed, coverage_file)
     umi_depth_to_cnt = defaultdict(int)
     depth_distribution = [0]
-    umitools_return = umitools(samtools_path, umitools_path, filein_sam, filein_bam, sorted_bam, clustered_bam, clustered_sam, stats)
+
+    umitools_return = umitools(samtools_path, umitools_path, filter_sam, filter_bam, sorted_bam, clustered_bam, clustered_sam, stats)
     for row in umitools_return.decode('utf-8').split('\n'):
         if not row.startswith('#'):
             if '#umis' in row:
@@ -151,6 +163,10 @@ def main():
             if 'reads out' in row:
                 num_output = int(row.split(' ')[-1].strip())
     num_consilidated = num_input - num_output
+
+    (total_num_bases, mean_bd, min_bd, max_bd, num_50x, num_100x, num_200x, num_500x,
+     num_5mean, num_25mean, num_50mean, num_75mean, num_mean) \
+        = stats_target_bases(samtools_path, sorted_bam, ref_bed, coverage_file)
 
     per_umi_stats = open(stats + '_per_umi.tsv','r')
     per_umi_stats.readline()
@@ -164,21 +180,28 @@ def main():
     mt_depth_75 = int(np.percentile(depth_distribution, 75))
     mt_depth_max = int(np.percentile(depth_distribution, 100))
 
+    print('#################################')
+    print('6.umi cluster finish.')
+    print('#################################')
+
     # reformat samfile parameters
-    alignment_sam = source + 'aligned/' + sample + '_clustered.sam'
     vcready_sam = source + 'aligned/' + sample + '_vcready.sam'
     # reformat samfile process
-    reformat_sam(alignment_sam, vcready_sam)
+    reformat_sam(clustered_sam, vcready_sam)
     vcready_bam = sam_to_bam(vcready_sam, samtools_path)
     vcready_sorted_bam = sort_index(vcready_bam, samtools_path)
 
+    print('#################################')
+    print('7.reformat samfile finish.')
+    print('#################################')
+
     # variant calling parameters
-    normal = '/home/administrator/pipeline_test/aligned/N223-N_S9_vcready_sorted.bam'
+    normal = '/home/administrator/svm_test/aligned/N223-N_S9_vcready_sorted.bam'
     outprefix = source + sample + '_variant'
     logfile = source + sample + '_logfile'
     n_cpu = '16'
     min_bq = '20'
-    min_mq = '20'
+    min_mq = '17'
     rpb = '8.6'
     mt_drop = '0'
     hp_len = '8'
@@ -193,6 +216,10 @@ def main():
          mismatch, mt_drop, threshold, min_frequency, min_active_score, tlod_threshold, nlod_threshold, ref_genome,
          bed_tandem_repeats, bed_repeat_masker_subset, bedtools_path, logfile)
 
+    print('#################################')
+    print('8.variant calling finish.')
+    print('#################################')
+
     # annotation parameters
     variant_vcf = source + sample + '_variant.smCounter.somatic.cut.vcf'
     annotated_csv = source + sample + '_annotated.csv'
@@ -202,6 +229,9 @@ def main():
     annotation(dict_cos,dict_clin,dict_g1000,variant_vcf,annotated_csv,annotation_stats_file)
     fill_table(annotated_csv, geneinfo)
 
+    print('#################################')
+    print('9.annotation finish.')
+    print('#################################')
 
     # statistics parameters
     pipeline_stats_file = source + sample + '_statistics_in_report.csv'
@@ -271,6 +301,9 @@ def main():
         f.write('% of target bases >= 75% of mean BD,' + str(num_75mean) + '\n')
         f.write('% of target bases >= mean BD,' + str(num_mean) + '\n')
 
+    print('#################################')
+    print('10.statistics finish.')
+    print('#################################')
 
 if __name__ == '__main__':
     main()
