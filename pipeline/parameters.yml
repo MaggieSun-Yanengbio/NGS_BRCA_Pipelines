@@ -1,0 +1,54 @@
+# common parameters
+source: /home/administrator/pipeline_test/
+sample: N223-M2_S10
+tailname: L001
+# version: 0.11.7
+fastqc_path: /home/administrator/fastqc/FastQC/fastqc
+# version: 0.7.12
+bwa_path: /usr/bin/bwa
+# version: 1.7
+samtools_path: samtools
+# version: 2.23.0
+bedtools_path: /usr/bin/bedtools
+ref_genome: /home/administrator/source/ucsc.hg19.fasta
+ref_fasta: /home/administrator/source/target_breast.refSeq.fa
+ref_bed: /home/administrator/source/target_breast.refSeq.bed
+index_name: /home/administrator/source/refseq
+primers: /home/administrator/source/DHS-001Z_primers_target.csv
+
+# trim
+min_read_len: 40
+
+# align
+num_threads: 4
+
+# filter
+min_mapq: 17
+max_soft_clip: 10
+max_dist: 2
+
+# umi cluster
+umitools_path: /home/administrator/umitools/umi_tools/umi_tools.py
+
+# variant call
+smcounter_path: /home/administrator/smCounter/smCounter-master/smcounter_v1.py
+normal: /home/administrator/svm_test/aligned/N223-N_S9_vcready_sorted.bam
+bed_tandem_repeats: /home/administrator/smCounter/smCounter-master/simpleRepeat.bed
+bed_repeat_masker_subset: /home/administrator/smCounter/smCounter-master/SR_LC_SL.nochr.bed
+n_cpu: 16
+min_bq: 20
+rpb: 8.6
+mt_drop: 0
+hp_len: 8
+mismatch: 6
+threshold: 0
+min_frequency: 0.01
+min_active_score: 0.01
+tlod_threshold: 6.3
+nlod_threshold: 3.5
+
+# annotation
+geneinfo: /home/administrator/source/geneid_breast_cancer.csv
+cosmic: /home/administrator/database/cosmic_breast_93genes_20180820.csv
+clinvar: /home/administrator/database/clinvar_breast_93genes_20180729.csv
+g1000: /home/administrator/database/1000genomes_breast_93genes.csv
