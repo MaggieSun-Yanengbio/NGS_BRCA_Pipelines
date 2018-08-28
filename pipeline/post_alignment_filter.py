@@ -21,7 +21,7 @@ def setup_logger(name, log_file, formatter, level=logging.DEBUG):
     return logger
 
 
-def store_logs(log_dir):
+def store_logs_filter(log_dir):
     formatter_filter_process = logging.Formatter("%(asctime)s;%(message)s")
     formatter_filter_errors = logging.Formatter("%(asctime)s;%(levelname)s; %(message)s")
     logger_filter_process = setup_logger('Post-alignment Filtration Messages',

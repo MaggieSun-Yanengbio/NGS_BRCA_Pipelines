@@ -12,14 +12,13 @@ import itertools
 def setup_logger(name, log_file, formatter, level=logging.DEBUG):
     handler = logging.FileHandler(log_file)
     handler.setFormatter(formatter)
-
     logger = logging.getLogger(name)
     logger.setLevel(level)
     logger.addHandler(handler)
 
     return logger
 
-def store_logs(log_dir):
+def store_logs_trim(log_dir):
     formatter_trim_process = logging.Formatter("%(asctime)s;%(message)s")
     formatter_trim_errors = logging.Formatter(
         "%(asctime)s;%(levelname)s;                                             %(message)s")

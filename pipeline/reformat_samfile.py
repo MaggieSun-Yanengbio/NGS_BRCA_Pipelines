@@ -43,7 +43,7 @@ def setup_logger(name, log_file, formatter, level=logging.DEBUG):
 
     return logger
 
-def store_logs(log_dir):
+def store_logs_reformat(log_dir):
     formatter_reformat_process = logging.Formatter("%(asctime)s;%(message)s")
     formatter_reformat_errors = logging.Formatter(
         "%(asctime)s;%(levelname)s;                                             %(message)s")

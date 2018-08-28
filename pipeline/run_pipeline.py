@@ -1,6 +1,8 @@
 import os
 import numpy as np
 from collections import defaultdict
+import yaml
+import time
 
 from qc import *
 from trim import *
@@ -12,39 +14,30 @@ from variant_call import *
 from annotation import *
 
 
-# common parameters
-source = '/home/administrator/pipeline_test/'
-sample = 'N223-M2_S10'
-tailname = 'L001'
-stats_out = source + sample + 'statistics.csv'
-read1 = source + sample + '_' + tailname + '_R1_001.fastq.gz'
-read2 = source + sample + '_' + tailname + '_R2_001.fastq.gz'
-fastqc_path = '/home/administrator/fastqc/FastQC/fastqc'
-bwa_path = '/usr/bin/bwa'
-samtools_path = 'samtools'
-umitools_path = '/home/administrator/umitools/umi_tools/umi_tools.py'
-bedtools_path = '/usr/bin/bedtools'
-ref_genome = '/home/administrator/source/ucsc.hg19.fasta'
-ref_fasta = '/home/administrator/source/target_breast.refSeq.fa'
-ref_bed = '/home/administrator/source/target_breast.refSeq.bed'
-index_name = '/home/administrator/source/refseq'
-primers = '/home/administrator/source/DHS-001Z_primers_target.csv'
-smcounter_path = '/home/administrator/smCounter/smCounter-master/smcounter_v1.py'
-bed_tandem_repeats = '/home/administrator/smCounter/smCounter-master/simpleRepeat.bed'
-bed_repeat_masker_subset = '/home/administrator/smCounter/smCounter-master/SR_LC_SL.nochr.bed'
-geneinfo = '/home/administrator/source/geneid_breast_cancer.csv'
-cosmic = '/home/administrator/database/cosmic_breast_93genes_20180820.csv'
-clinvar = '/home/administrator/database/clinvar_breast_93genes_20180729.csv'
-g1000 = '/home/administrator/database/1000genomes_breast_93genes.csv'
-
-
 def main():
+
+    time_start = time.time()
+
+    yamlfile = '/home/administrator/pipeline/NGS_BRCA_Pipelines-master/parameters.yml'
+    y = yaml.load(open(yamlfile))
+
+    print('#################################')
+    print('1.raw data qc is starting')
+    print('#################################')
+
     # raw data qc parameters
-    qc_dir = source + 'rawdata_qc'
+    qc_dir = y['source'] + 'rawdata_qc/'
+    qc_log_dir = qc_dir + 'log/'
+    read1 = y['source'] + y['sample'] + '_' + y['tailname'] + '_R1_001.fastq.gz'
+    read2 = y['source'] + y['sample'] + '_' + y['tailname'] + '_R2_001.fastq.gz'
     # raw data qc process
     if not os.path.exists(qc_dir):
         os.makedirs(qc_dir)
-    qc_result1, qc_result2 = qc_raw_reads(fastqc_path, qc_dir, sample, read1, read2,)
+    if not os.path.exists(qc_log_dir):
+        os.makedirs(qc_log_dir)
+
+    logger_qc_process, logger_qc_errors = store_logs_qc(qc_log_dir)
+    qc_result1, qc_result2 = qc_raw_reads(y['fastqc_path'], qc_dir, y['sample'], read1, read2, logger_qc_process, logger_qc_errors)
     min_length1, max_length1, gc1, q20_r1, q30_r1 = qc_result1
     min_length2, max_length2, gc2, q20_r2, q30_r2 = qc_result2
     raw_min_length = min(int(min_length1), int(min_length2))
@@ -52,38 +45,50 @@ def main():
     raw_gc = round(np.mean([float(gc1), float(gc2)]), 3)
     raw_q20 = round(np.mean([float(q20_r1[:-1]), float(q30_r1[:-1])]), 3)
     raw_q30 = round(np.mean([float(q20_r2[:-1]), float(q30_r2[:-1])]), 3)
+    print ('Min length of raw reads == {0}'.format(raw_min_length))
+    print ('Max length of raw reads == {0}'.format(raw_max_length))
+    print ('Percentage of GC of raw reads == {0}'.format(raw_gc))
+    print ('Percentage of Q20 of raw reads == {0}'.format(raw_q20))
+    print ('Percentage of Q30 of raw reads == {0}'.format(raw_q30))
+    print ('Finish.')
 
     print('#################################')
-    print('1.raw data qc finish.')
+    print('2.trim is starting')
     print('#################################')
 
     # trim parameters
-    out_dir = 'undetermined/'
-    min_read_len = 40
-    log_dir = source + out_dir + 'log/'
-    trimmed1 = source + out_dir + sample + '_R1_undetermined.fastq'
-    trimmed2 = source + out_dir + sample + '_R2_undetermined.fastq'
-    trim_stats_file = source + out_dir + sample + '_basic_stats.txt'
+    trim_dir = 'undetermined/'
+    trim_log_dir = y['source'] + trim_dir + 'log/'
+    trimmed1 = y['source'] + trim_dir + y['sample'] + '_R1_undetermined.fastq'
+    trimmed2 = y['source'] + trim_dir + y['sample'] + '_R2_undetermined.fastq'
+    trim_stats_file = y['source'] + trim_dir + y['sample'] + '_basic_stats.txt'
     common_seq1 = 'CAAAACGCAATACTGTACATT'
     common_seq2 = 'ATTGGAGTCCT'
+
     # trim process
-    if not os.path.exists(log_dir):
-        os.makedirs(log_dir)
-    logger_trim_process, logger_trim_errors = store_logs(log_dir)
+    if not os.path.exists(trim_log_dir):
+        os.makedirs(trim_log_dir)
+    logger_trim_process, logger_trim_errors = store_logs_trim(trim_log_dir)
     num_total_reads, num_short_reads, num_unproper_reads, num_without_comseq_reads, num_clean_reads, percentage_clean = \
-        trim_read_pairs(read1, read2, trimmed1, trimmed2, min_read_len, common_seq1, common_seq2,
+        trim_read_pairs(read1, read2, trimmed1, trimmed2, y['min_read_len'], common_seq1, common_seq2,
                         trim_stats_file, logger_trim_process, logger_trim_errors)
+    print ('Finish.')
 
     print('#################################')
-    print('2.trim finish.')
+    print('3.clean data qc is starting')
     print('#################################')
 
     # clean data qc parameters
-    qc_dir = source + 'cleandata_qc'
+    qc_dir = y['source'] + 'cleandata_qc/'
+    qc_log_dir = qc_dir + 'log/'
+
     # clean data qc process
     if not os.path.exists(qc_dir):
         os.makedirs(qc_dir)
-    qc_result1, qc_result2 = qc_raw_reads(fastqc_path, qc_dir, sample, trimmed1, trimmed2)
+    if not os.path.exists(qc_log_dir):
+        os.makedirs(qc_log_dir)
+    logger_qc_process, logger_qc_errors = store_logs_qc(qc_log_dir)
+    qc_result1, qc_result2 = qc_raw_reads(y['fastqc_path'], qc_dir, y['sample'], trimmed1, trimmed2, logger_qc_process, logger_qc_errors)
     min_length1, max_length1, gc1, q20_r1, q30_r1 = qc_result1
     min_length2, max_length2, gc2, q20_r2, q30_r2 = qc_result2
     clean_min_length = min(int(min_length1), int(min_length2))
@@ -91,69 +96,79 @@ def main():
     clean_gc = round(np.mean([float(gc1), float(gc2)]), 3)
     clean_q20 = round(np.mean([float(q20_r1[:-1]), float(q30_r1[:-1])]), 3)
     clean_q30 = round(np.mean([float(q20_r2[:-1]), float(q30_r2[:-1])]), 3)
+    print('Min length of clean reads == {0}'.format(clean_min_length))
+    print('Max length of clean reads == {0}'.format(clean_max_length))
+    print('Percentage of GC of clean reads == {0}'.format(clean_gc))
+    print('Percentage of Q20 of clean reads == {0}'.format(clean_q20))
+    print('Percentage of Q30 of clean reads == {0}'.format(clean_q30))
+    print ('Finish.')
 
     print('#################################')
-    print('3.clean data qc finish.')
+    print('4.alignment is starting')
     print('#################################')
 
     # parameter alignment
-    alignment_sam = source + 'aligned/' + sample + '_aligned.sam'
-    log_dir = source + 'aligned/log/'
-    num_threads = 4
+    alignment_sam = y['source'] + 'aligned/' + y['sample'] + '_aligned.sam'
+    align_log_dir = y['source'] + 'aligned/log/'
+
     # alignment process
-    if not os.path.exists(log_dir):
-        os.makedirs(log_dir)
+    if not os.path.exists(align_log_dir):
+        os.makedirs(align_log_dir)
     length_target_region = 0
-    for row in open(ref_fasta, 'r'):
+    for row in open(y['ref_fasta'], 'r'):
         if row.startswith('>'):
             start, end = row.strip().split('_')[1:]
             length_target_region += int(end) - int(start)
-    logger_bwa_process, logger_bwa_errors = store_logs(log_dir)
-    align_reads_bwa(bwa_path, ref_fasta, index_name, trimmed1, trimmed2,
-                    alignment_sam, num_threads, logger_bwa_process, logger_bwa_errors)
+    logger_bwa_process, logger_bwa_errors = store_logs_align(align_log_dir)
+    align_reads_bwa(y['bwa_path'], y['ref_fasta'], y['index_name'], trimmed1, trimmed2,
+                    alignment_sam, str(y['num_threads']), logger_bwa_process, logger_bwa_errors)
+    print ('Finish.')
 
     print('#################################')
-    print('4.align finish.')
+    print('5.filter is starting')
     print('#################################')
 
     # filter parameters
-    log_dir = source + 'aligned/log/'
-    min_mapq = 17
-    max_soft_clip = 10
-    out_file1 = source + 'aligned/' + sample + '_tmp.sam'
-    filter_stats_file = source + 'aligned/' + sample + '_align_stats.txt'
-    primer_stats_file = source + 'aligned/' + sample + '_primer_stats.csv'
-    max_dist = 2
-    filter_sam = source + 'aligned/' + sample + '_filtered.sam'
+    filter_log_dir = y['source'] + 'aligned/log/'
+    tmp_sam = y['source'] + 'aligned/' + y['sample'] + '_tmp.sam'
+    filter_stats_file = y['source'] + 'aligned/' + y['sample'] + '_align_stats.txt'
+    primer_stats_file = y['source'] + 'aligned/' + y['sample'] + '_primer_stats.csv'
+    filter_sam = y['source'] + 'aligned/' + y['sample'] + '_filtered.sam'
+
     # filter process
-    logger_filter_process, logger_filter_errors = store_logs(log_dir)
+    logger_filter_process, logger_filter_errors = store_logs_filter(filter_log_dir)
     (num_sec, num_unmap, min_mapq, num_low_mapq, final_count, percentage_filter_reads) = \
-        filter_alignment_samtools(samtools_path, alignment_sam, min_mapq,
-                                max_soft_clip, out_file1, filter_stats_file,
+        filter_alignment_samtools(y['samtools_path'], alignment_sam, y['min_mapq'],
+                                y['max_soft_clip'], tmp_sam, filter_stats_file,
                                 logger_filter_process, logger_filter_errors)
     (num_unproper_pairs, num_primers, num_off_target, ratio_off, num_on_target, ratio_on, num_target_primers, mean_rdp,
      num_primers_5mean_rdp, num_primers_25mean_rdp, num_primers_50mean_rdp, num_primers_75mean_rdp, num_primers_mean_rdp,
      mean_mdp, num_primers_5mean_mdp, num_primers_25mean_mdp, num_primers_50mean_mdp, num_primers_75mean_mdp, num_primers_mean_mdp
-     )= identify_gs_primers(samtools_path, out_file1, primers, max_dist, filter_sam,
+     )= identify_gs_primers(y['samtools_path'], tmp_sam, y['primers'], y['max_dist'], filter_sam,
                             filter_stats_file, primer_stats_file, logger_filter_process,
                             logger_filter_errors)
+    print ('Finish.')
 
     print('#################################')
-    print('5.filter finish.')
+    print('6.umi cluster is starting')
     print('#################################')
 
     # umi cluster parameters
-    filter_bam = source + 'aligned/' + sample + '_filtered.bam'
-    sorted_bam = source + 'aligned/' + sample + '_filtered_sorted.bam'
-    clustered_bam = source + 'aligned/' + sample + '_clustered.bam'
-    clustered_sam = source + 'aligned/' + sample + '_clustered.sam'
-    stats = source + 'aligned/' + sample + '_deduplicated'
-    coverage_file = source + 'aligned/' + sample + '_coverage.tsv'
+    umitools_log_dir = y['source'] + 'aligned/log/'
+    filter_bam = y['source'] + 'aligned/' + y['sample'] + '_filtered.bam'
+    sorted_bam = y['source'] + 'aligned/' + y['sample'] + '_filtered_sorted.bam'
+    clustered_bam = y['source'] + 'aligned/' + y['sample'] + '_clustered.bam'
+    clustered_sam = y['source'] + 'aligned/' + y['sample'] + '_clustered.sam'
+    stats = y['source'] + 'aligned/' + y['sample'] + '_deduplicated'
+    coverage_file = y['source'] + 'aligned/' + y['sample'] + '_coverage.tsv'
+
     # umi cluster process
     umi_depth_to_cnt = defaultdict(int)
     depth_distribution = [0]
 
-    umitools_return = umitools(samtools_path, umitools_path, filter_sam, filter_bam, sorted_bam, clustered_bam, clustered_sam, stats)
+    logger_umitools_process, logger_umitools_errors = store_logs_align(umitools_log_dir)
+    umitools_return = umitools(y['samtools_path'], y['umitools_path'], filter_sam, filter_bam, sorted_bam, clustered_bam,
+                               clustered_sam, stats, logger_umitools_process, logger_umitools_errors)
     for row in umitools_return.decode('utf-8').split('\n'):
         if not row.startswith('#'):
             if '#umis' in row:
@@ -166,7 +181,7 @@ def main():
 
     (total_num_bases, mean_bd, min_bd, max_bd, num_50x, num_100x, num_200x, num_500x,
      num_5mean, num_25mean, num_50mean, num_75mean, num_mean) \
-        = stats_target_bases(samtools_path, sorted_bam, ref_bed, coverage_file)
+        = stats_target_bases(y['samtools_path'], sorted_bam, y['ref_bed'], coverage_file)
 
     per_umi_stats = open(stats + '_per_umi.tsv','r')
     per_umi_stats.readline()
@@ -180,64 +195,66 @@ def main():
     mt_depth_75 = int(np.percentile(depth_distribution, 75))
     mt_depth_max = int(np.percentile(depth_distribution, 100))
 
+    print ('Number of total MTs == {0}'.format(num_mts))
+    print ('Number of consilidated reads == {0}'.format(num_consilidated))
+    print ('Number of total bases on-target == {0}'.format(total_num_bases))
+    print ('Mean of base depth == {0}'.format(mean_bd))
+    print ('Finish.')
+
     print('#################################')
-    print('6.umi cluster finish.')
+    print('7.reformat samfile is starting')
     print('#################################')
 
     # reformat samfile parameters
-    vcready_sam = source + 'aligned/' + sample + '_vcready.sam'
+    vcready_sam = y['source'] + 'aligned/' + y['sample'] + '_vcready.sam'
+
     # reformat samfile process
     reformat_sam(clustered_sam, vcready_sam)
-    vcready_bam = sam_to_bam(vcready_sam, samtools_path)
-    vcready_sorted_bam = sort_index(vcready_bam, samtools_path)
+    vcready_bam = sam_to_bam(vcready_sam, y['samtools_path'])
+    vcready_sorted_bam = sort_index(vcready_bam, y['samtools_path'])
+    print ('Finish.')
 
     print('#################################')
-    print('7.reformat samfile finish.')
+    print('8.variant calling is starting')
     print('#################################')
 
     # variant calling parameters
-    normal = '/home/administrator/svm_test/aligned/N223-N_S9_vcready_sorted.bam'
-    outprefix = source + sample + '_variant'
-    logfile = source + sample + '_logfile'
-    n_cpu = '16'
-    min_bq = '20'
-    min_mq = '17'
-    rpb = '8.6'
-    mt_drop = '0'
-    hp_len = '8'
-    mismatch = '6'
-    threshold = '0'
-    min_frequency = '0.01'
-    min_active_score = '0.01'
-    tlod_threshold = '6.3'
-    nlod_threshold = '3.5'
+    call_outprefix = y['source'] + y['sample'] + '_variant'
+    call_log = y['source'] + y['sample'] + '_logfile'
+
     # variant calling process
-    call(smcounter_path, outprefix, vcready_sorted_bam, normal, ref_bed, ref_fasta, rpb, n_cpu, min_bq, min_mq, hp_len,
-         mismatch, mt_drop, threshold, min_frequency, min_active_score, tlod_threshold, nlod_threshold, ref_genome,
-         bed_tandem_repeats, bed_repeat_masker_subset, bedtools_path, logfile)
+    call(y['smcounter_path'], call_outprefix, vcready_sorted_bam, y['normal'], y['ref_bed'], y['ref_fasta'], str(y['rpb']),
+         str(y['n_cpu']), str(y['min_bq']), str(y['min_mapq']), str(y['hp_len']), str(y['mismatch']), str(y['mt_drop']),
+         str(y['threshold']), str(y['min_frequency']), str(y['min_active_score']), str(y['tlod_threshold']),
+         str(y['nlod_threshold']), y['ref_genome'], y['bed_tandem_repeats'], y['bed_repeat_masker_subset'],
+         y['bedtools_path'], call_log)
+    print ('Finish.')
 
     print('#################################')
-    print('8.variant calling finish.')
+    print('9.annotation is starting')
     print('#################################')
 
     # annotation parameters
-    variant_vcf = source + sample + '_variant.smCounter.somatic.cut.vcf'
-    annotated_csv = source + sample + '_annotated.csv'
-    annotation_stats_file = source + sample + '_annotate_stats.txt'
+    variant_vcf = y['source'] + y['sample'] + '_variant.smCounter.somatic.cut.vcf'
+    annotated_csv = y['source'] + y['sample'] + '_annotated.csv'
+    annotation_stats_file = y['source'] + y['sample'] + '_annotate_stats.txt'
+
     # annotation process
-    dict_cos, dict_clin, dict_g1000 = read_database(cosmic,clinvar,g1000)
+    dict_cos, dict_clin, dict_g1000 = read_database(y['cosmic'], y['clinvar'], y['g1000'])
     annotation(dict_cos,dict_clin,dict_g1000,variant_vcf,annotated_csv,annotation_stats_file)
-    fill_table(annotated_csv, geneinfo)
+    fill_table(annotated_csv, y['geneinfo'])
+    print ('Finish.')
 
     print('#################################')
-    print('9.annotation finish.')
+    print('10.statistics is starting')
     print('#################################')
 
     # statistics parameters
-    pipeline_stats_file = source + sample + '_statistics_in_report.csv'
+    pipeline_stats_file = y['source'] + y['sample'] + '_statistics_in_report.csv'
+
     # statistics process
     with open(pipeline_stats_file, 'w') as f:
-        f.write('library name,' + sample + '\n')
+        f.write('library name,' + y['sample'] + '\n')
         f.write('Number of raw read pairs,' + str(num_total_reads) + '\n')
         f.write('Minimun read length (raw),' + str(raw_min_length) + '\n')
         f.write('Maximun read length (raw),' + str(raw_max_length) + '\n')
@@ -301,9 +318,9 @@ def main():
         f.write('% of target bases >= 75% of mean BD,' + str(num_75mean) + '\n')
         f.write('% of target bases >= mean BD,' + str(num_mean) + '\n')
 
-    print('#################################')
-    print('10.statistics finish.')
-    print('#################################')
+    print ('Finish.')
+    print ('The time of pipeline cost is %s minutes.' % str((time.time() - time_start) / 60))
+
 
 if __name__ == '__main__':
     main()

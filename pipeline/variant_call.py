@@ -20,30 +20,30 @@ import time
 #bedRepeatMaskerSubset--bed for RepeatMasker simple repeats, low complexity,microsatellite regions
 #bedtoolsPath--path to bedtools
 #logFile--log file
-def call(smcounter,outPrefix,bamFile,normal,bedTarget,fastaTarget,rpb,nCPU,minBQ,minMQ,hpLen,mismatchThr,
-         mtDrop,threshold,min_frequency, min_active_score, tlod_threshold, nlod_threshold,refGenome,
-         bedTandemRepeats,bedRepeatMaskerSubset,bedtoolsPath,logFile):
+def call(smcounter,outprefix,bamfile,normal,bedtarget,fastatarget,rpb,ncpu,minbq,minmq,hplen,mismatchthr,
+         mtdrop,threshold,min_frequency, min_active_score, tlod_threshold, nlod_threshold,refgenome,
+         bedtandemrepeats,bedrepeatmaskersubset,bedtoolspath,logfile):
     cmd = 'python2.7 ' + smcounter + \
-          ' --outPrefix ' + outPrefix + \
-          ' --bamFile ' + bamFile + \
+          ' --outPrefix ' + outprefix + \
+          ' --bamFile ' + bamfile + \
           ' --normal_bamfile ' + normal + \
-          ' --bedTarget ' + bedTarget + \
-          ' --fastaTarget ' + fastaTarget + \
+          ' --bedTarget ' + bedtarget + \
+          ' --fastaTarget ' + fastatarget + \
           ' --rpb ' + rpb + \
-          ' --nCPU ' + nCPU + \
-          ' --minBQ ' + minBQ + \
-          ' --minMQ ' + minMQ + \
-          ' --hpLen ' + hpLen + \
-          ' --mismatchThr ' + mismatchThr + \
-          ' --mtDrop ' + mtDrop + \
+          ' --nCPU ' + ncpu + \
+          ' --minBQ ' + minbq + \
+          ' --minMQ ' + minmq + \
+          ' --hpLen ' + hplen + \
+          ' --mismatchThr ' + mismatchthr + \
+          ' --mtDrop ' + mtdrop + \
           ' --threshold ' + threshold + \
           ' --min_frequency ' + min_frequency + \
           ' --min_active_score ' + min_active_score + \
           ' --tlod_threshold ' + tlod_threshold + \
           ' --nlod_threshold ' + nlod_threshold + \
-          ' --refGenome ' + refGenome + \
-          ' --bedTandemRepeats ' + bedTandemRepeats + \
-          ' --bedRepeatMaskerSubset ' + bedRepeatMaskerSubset + \
-          ' --bedtoolsPath ' + bedtoolsPath + \
-          ' --logFile ' + logFile
+          ' --refGenome ' + refgenome + \
+          ' --bedTandemRepeats ' + bedtandemrepeats + \
+          ' --bedRepeatMaskerSubset ' + bedrepeatmaskersubset + \
+          ' --bedtoolsPath ' + bedtoolspath + \
+          ' --logFile ' + logfile
     os.system(cmd)

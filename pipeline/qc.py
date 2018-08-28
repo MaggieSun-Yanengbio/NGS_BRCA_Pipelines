@@ -3,6 +3,28 @@ import re
 from itertools import groupby
 import shlex
 import subprocess
+import logging
+
+def setup_logger(name, log_file, formatter, level=logging.DEBUG):
+    handler = logging.FileHandler(log_file)
+    handler.setFormatter(formatter)
+    logger = logging.getLogger(name)
+    logger.setLevel(level)
+    logger.addHandler(handler)
+
+    return logger
+
+def store_logs_qc(log_dir):
+    formatter_qc_process = logging.Formatter("%(asctime)s;%(message)s")
+    formatter_qc_errors = logging.Formatter(
+        "%(asctime)s;%(levelname)s;                                             %(message)s")
+    logger_qc_process = setup_logger('Running Messages of static',
+                                       log_dir + '/static_process.log',
+                                       formatter_qc_process)
+    logger_qc_errors = setup_logger('Errors & Warnings of pipeline',
+                                      log_dir + '/static_errors.log',
+                                      formatter_qc_errors)
+    return logger_qc_process, logger_qc_errors
 
 
 def stdout_err(command):
@@ -47,15 +69,14 @@ def split_n_bases(nbases):
 
 
 
-def getinfo(fastqc):
+def getinfo(fastqc, logger_statistics_process, logger_statistics_errors):
     qc_read = fastqc.split(".fastq")[0] + '_fastqc.zip'
     if not os.path.isfile( fastqc.split(".fastq")[0] + '_fastqc'):
         command1 = 'unzip' + ' -o ' + qc_read  + ' -d ' + os.path.dirname(qc_read)
-        os.system(command1)
-        # stdout, stderr = stdout_err(command1)
-        # logger_statistics_process.info(stdout)
-        # logger_statistics_errors.info(stderr)
-    print('{0} has been completed.'.format(qc_read))
+        stdout, stderr = stdout_err(command1)
+        logger_statistics_process.info(stdout)
+        logger_statistics_errors.info(stderr)
+    # print('{0} has been completed.'.format(qc_read))
     qc_data = qc_read.rstrip(".zip") + '/' + 'fastqc_data.txt'
     qcdata = open(qc_data,"r")
     modules = 0
@@ -132,20 +153,17 @@ def getinfo(fastqc):
             split_n_bases(','.join(nbases))[0], split_n_bases(','.join(nbases))[1]]
 
 
-def qc_raw_reads(fastQC_dir, out_dir, sample, read1, read2):
+def qc_raw_reads(fastQC_dir, out_dir, sample, read1, read2, logger_statistics_process, logger_statistics_errors):
     qc_read = out_dir + '/' + os.path.basename(read1).split(".fastq")[0] + '_fastqc.zip'
-    # if not os.path.isfile(qc_read):
+
     command1 = '{0} {1} {2} -o {3}'.format(fastQC_dir, read1, read2, out_dir)
-    os.system(command1)
-    # stdout, stderr = stdout_err(command1)
-        # logger_statistics_process.info(stdout)
-        # logger_statistics_errors.info(stderr)
-        # print('QC-{0} has been completed.\n'.format(module))
-    # else:
-    #     print('QC-{0} exists.\n'.format(module))
+    stdout, stderr = stdout_err(command1)
+    logger_statistics_process.info(stdout)
+    logger_statistics_errors.info(stderr)
+
     qc_statistics = out_dir + '/' + sample + '_qc.statistics.txt'
-    qc_result1 = getinfo(out_dir + '/' + os.path.basename(read1))
-    qc_result2 = getinfo(out_dir + '/' + os.path.basename(read2))
+    qc_result1 = getinfo(out_dir + '/' + os.path.basename(read1), logger_statistics_process, logger_statistics_errors)
+    qc_result2 = getinfo(out_dir + '/' + os.path.basename(read2), logger_statistics_process, logger_statistics_errors)
     min_length1, max_length1, gc1 = qc_result1[1:4]
     q20_r1, q30_r1 = qc_result1[6:8]
     min_length2, max_length2, gc2 = qc_result2[1:4]

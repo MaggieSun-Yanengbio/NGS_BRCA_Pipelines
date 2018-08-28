@@ -1,6 +1,26 @@
 import os
-import sys
 from subprocess import Popen, PIPE
+import logging
+
+def setup_logger(name, log_file, formatter, level=logging.DEBUG):
+    handler = logging.FileHandler(log_file)
+    handler.setFormatter(formatter)
+    logger = logging.getLogger(name)
+    logger.setLevel(level)
+    logger.addHandler(handler)
+
+    return logger
+
+def store_logs_cluster(log_dir):
+    formatter_umitools_process = logging.Formatter("%(asctime)s;%(message)s")
+    formatter_umitools_errors = logging.Formatter("%(asctime)s;%(levelname)s;                                             %(message)s")
+    logger_umitools_process = setup_logger('BWA Running Messages',
+                                      log_dir + '/umitools_process.log',
+                                      formatter_umitools_process)
+    logger_umitools_errors = setup_logger('Errors & Warnings of BWA',
+                                    log_dir + '/umitools_errors.log',
+                                    formatter_umitools_errors)
+    return logger_umitools_process, logger_umitools_errors
 
 def stats_target_bases(samtools_path, filtered_bam, bedfile, cov_file):
     bed = open(bedfile, 'r')
@@ -66,8 +86,8 @@ def stats_target_bases(samtools_path, filtered_bam, bedfile, cov_file):
             round(100 * num_mean / num_target_bases, 3))
 
 
-
-def umitools(samtools_path, umitools_path, filein, bam, sorted_bam, clustered_bam, clustered_sam, stats):
+def umitools(samtools_path, umitools_path, filein, bam, sorted_bam, clustered_bam, clustered_sam, stats,
+             logger_umitools_process, logger_umitools_errors):
     cmd1 = samtools_path + ' view -bS ' + filein + ' > ' + bam
     os.system(cmd1)
     cmd2 = samtools_path + ' sort ' + bam + ' > ' + sorted_bam
@@ -76,7 +96,12 @@ def umitools(samtools_path, umitools_path, filein, bam, sorted_bam, clustered_ba
     os.system(cmd3)
     process = Popen(['python3', umitools_path, 'dedup', '-I', sorted_bam, '--output-stats=%s'%stats, '-S', clustered_bam,
                      '--edit-distance-threshold', '2', '--paired'], stdout=PIPE, stderr=PIPE)
+    process.wait()
     stdout, stderr = process.communicate()
+    if stdout is not b'':
+        logger_umitools_process.info(stdout)
+    if stderr is not b'':
+        logger_umitools_errors.info(stderr)
     cmd4 = samtools_path + ' view -h ' + clustered_bam + ' > ' + clustered_sam
     os.system(cmd4)
 
