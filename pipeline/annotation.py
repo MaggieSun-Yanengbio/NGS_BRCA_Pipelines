@@ -131,8 +131,8 @@ def annotation(dict_cos,dict_clin,dict_g1000,variant_vcf,annotated_csv,stats_fil
     var = open(variant_vcf, 'r')
     output = open(annotated_csv, 'w')
     output.write(
-        'CHR,POS,REF,ALT,FILTER,TYPE,DP,MT,UMT,VMT,VMF,TLOD,NLOD,Gene_ID,RS_ID,CLNDN,HGVS,CLNSIG,SO,Molecular_Consequence,'
-        'COSMIC_ID,Mutation_Description,Feature_ID,Gene_Name,Mutation_Zygosity,LOH,'
+        'CHR,POS,REF,ALT,FILTER,TYPE,DP,MT,UMT,VMT,VMF,TLOD,NLOD,Gene_ID,RS_ID,CLNDN,HGVS,CLNSIG,SO,Molecular_Consequence_Clinvar,'
+        'COSMIC_ID,Mutation_Consequence_Cosmic,Feature_ID,Gene_Name,Mutation_Zygosity,LOH,'
         'FATHMM_Prediction,FATHMM_Score,Mutation_Somatic_Status,PMID,Gene_Name1,RS_ID1,EAS_AF,EUR_AF,AMR_AF,'
         'SAS_AF,AFR_AF\n')
     for line in var:
