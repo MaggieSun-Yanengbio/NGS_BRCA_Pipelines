@@ -50,9 +50,9 @@ def read_database(cosmic,clinvar,g1000):
         elif '>' in mutation_cds:
             change = mutation_cds[mutation_cds.find('>')-1:]
         key1 = [chr, start ,change]
-        value1 = [mutation_id, mutation_description, accession_number, gene_name, gene_cds_length,
-                  mutation_zygosity, loh, mutation_strand, mutation_cds, mutation_aa, fathmm_prediction, fathmm_score,
-                  mutation_somatic_status]
+        value1 = [mutation_id, mutation_description, accession_number, gene_name,
+                  mutation_zygosity, loh, fathmm_prediction, fathmm_score,
+                  mutation_somatic_status, pubmed_pmid]
         dict_cos[','.join(key1)] = ','.join(value1)
 
     clin = open(clinvar, 'r')
@@ -60,7 +60,7 @@ def read_database(cosmic,clinvar,g1000):
     clin.readline()
     for db2 in clin.readlines():
         genename, chr, start, end, geneid, pos, ref, alt, alleleid, rs, af_esp, af_exac, af_tgp, \
-        clndn, clnhgvs, clnsig = db2.strip().split(',')
+        clndn, clnhgvs, clnsig, so, molecular_consequence = db2.strip().split(',')
         if rs is 'N':
             rs = '-'
         if len(ref) == len(alt):
@@ -72,7 +72,7 @@ def read_database(cosmic,clinvar,g1000):
         else:
             change = 'del' + ref + 'ins' + alt
         key2 = [chr, pos, change]
-        value2 = [geneid, rs, clndn, clnhgvs, clnsig]
+        value2 = [geneid, rs, clndn, clnhgvs, clnsig, so, molecular_consequence]
         dict_clin[','.join(key2)] = ','.join(value2)
 
     genomes1000 = open(g1000, 'r')
@@ -131,9 +131,9 @@ def annotation(dict_cos,dict_clin,dict_g1000,variant_vcf,annotated_csv,stats_fil
     var = open(variant_vcf, 'r')
     output = open(annotated_csv, 'w')
     output.write(
-        'CHR,POS,REF,ALT,FILTER,TYPE,DP,MT,UMT,VMT,VMF,TLOD,NLOD,Gene_ID,RS_ID,CLNDN,HGVS,CLNSIG,'
-        'COSMIC_ID,Mutation_Description,Feature_ID,Gene_Name,Gene_CDS_Length,Mutation_Zygosity,LOH,Mutation_Strand,'
-        'HGVS.c,HGVS.p,FATHMM_Prediction,FATHMM_Score,Mutation_Somatic_Status,Gene_Name1,RS_ID1,EAS_AF,EUR_AF,AMR_AF,'
+        'CHR,POS,REF,ALT,FILTER,TYPE,DP,MT,UMT,VMT,VMF,TLOD,NLOD,Gene_ID,RS_ID,CLNDN,HGVS,CLNSIG,SO,Molecular_Consequence,'
+        'COSMIC_ID,Mutation_Description,Feature_ID,Gene_Name,Mutation_Zygosity,LOH,'
+        'FATHMM_Prediction,FATHMM_Score,Mutation_Somatic_Status,PMID,Gene_Name1,RS_ID1,EAS_AF,EUR_AF,AMR_AF,'
         'SAS_AF,AFR_AF\n')
     for line in var:
         if not line.startswith('#'):
@@ -162,7 +162,7 @@ def annotation(dict_cos,dict_clin,dict_g1000,variant_vcf,annotated_csv,stats_fil
                     new = ','.join(value) + ',' + dict_clin[key] + ','
                     num_in_clinvar += 1
                 else:
-                    new = ','.join(value) + ',-,-,-,' + define_hgvs(chrom, pos, ref, alt) + ',-,'
+                    new = ','.join(value) + ',-,-,-,-,-,' + define_hgvs(chrom, pos, ref, alt) + ',-,'
                     unmatch += 1
                 if key in dict_cos:
                     new += dict_cos[key] + ','
@@ -171,7 +171,7 @@ def annotation(dict_cos,dict_clin,dict_g1000,variant_vcf,annotated_csv,stats_fil
                     new += dict_cos[key1] + ','
                     num_in_cosmic += 1
                 else:
-                    new += '-,-,-,-,-,-,-,-,-,-,-,-,-,'
+                    new += '-,-,-,-,-,-,-,-,-,-,'
                     unmatch += 1
                 if key in dict_g1000:
                     new += dict_g1000[key] + '\n'
