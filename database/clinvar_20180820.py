@@ -1,61 +1,76 @@
-#cosmic数据整理
-filein = open('/home/administrator/database/mutation_database/COSMIC/CosmicMutantExport_20180820.tsv','r')
-output = open('/home/administrator/database/mutation_database/COSMIC/cosmic_breast_93genes_20180820.csv','w')
+# clinvar数据整理
+from collections import defaultdict
 
-target_genes = []
-for gene in open('/home/administrator/database/mutation_database/qiagen_breast_cancer_panel_gene_list.txt','r'):
-    target_genes.append(gene.strip())
+clinvar_table = open('/home/administrator/database/mutation_database/clinvar/clinvar_table.csv', 'w')
+clinvar_non_genename = open('/home/administrator/database/mutation_database/clinvar/clinvar_non_genename.vcf', 'w')
 
-filein.readline()
-for row in filein.readlines():
-    genename, accessing_number, cds_length, hgnc_id, sample_name, sample_id, tumor_id, primary_site, site_sub1, \
-    site_sub2 , site_sub3, primary_histology, hist_sub1, hist_sub2, hist_sub3, genome_wide_screen, mutation_id, \
-    mutation_cds, mutation_aa, mutation_description, mutation_zygosity, log, grch, pos, mutation_strand, snp, \
-    resistance, prediction, score, mutation_somatic_status, pubmed, id_study, sample_type, tumor_origin, age \
-    = row.split('\t')
-    if 'ENST' in genename:
-        genename = genename[:genename.find('_')]
-    if genename == 'MRE11A':
-        genename = 'MRE11'
-    if genename in target_genes:
-        if hgnc_id.strip() == '':
-            hgnc_id = 'NS'
-        if '?' in mutation_cds:
-            mutation_cds = 'NS'
-        if '?' in mutation_aa:
-            mutation_aa = 'NS'
-        if 'Unknown' in mutation_description:
-            mutation_description = 'NS'
-        if mutation_zygosity.strip() == '':
-            mutation_zygosity = 'NS'
-        if grch.strip() == '':
-            grch = 'NS'
-        if pos.strip() == '':
-            chr = start = end = 'NS'
+for row in open('/home/administrator/database/mutation_database/clinvar/clinvar_20180729.vcf','r'):
+    tag_to_content = defaultdict(str)
+    if not row.startswith('#'):
+        chr, pos, id, ref, alt, qual, filter, info = row.strip().split('\t')
+        if 'GENEINFO' in info:
+            for tag in info.strip().split(';'):
+                tag_to_content[tag[:tag.rfind('=')]] = tag[tag.rfind('=')+1:]
+            tag_to_content['CLNDN'] = tag_to_content['CLNDN'].replace(',',';')
+            tag_to_content['CLNSIG'] = tag_to_content['CLNSIG'].replace(',',';')
+            if 'MC' in tag_to_content:
+                so, molecular_consequence = tag_to_content['MC'].split(',')[0].split('|')
+            else:
+                so, molecular_consequence = ['N', 'N']
+
+            geneinfo = tag_to_content['GENEINFO']
+            if '|' not in tag_to_content['GENEINFO']:
+                genename = geneinfo[geneinfo.rfind('=')+1:geneinfo.rfind(':')]
+                join_list = [genename, pos, ref, alt , tag_to_content['ALLELEID'], tag_to_content['RS'],
+                                    tag_to_content['AF_ESP'], tag_to_content['AF_EXAC'], tag_to_content['AF_TGP'],
+                                    tag_to_content['CLNDN'], tag_to_content['CLNHGVS'], tag_to_content['CLNSIG'],
+                                    so[3:], molecular_consequence]
+                idx = 0
+                for ele in join_list:
+                    if ele == '':
+                        join_list[idx] = 'N'
+                    idx += 1
+                new_row = ','.join(join_list)+'\n'
+                clinvar_table.write(new_row)
+            else:
+                for gene in geneinfo.split('|'):
+                    genename = gene[:gene.rfind(':')]
+                    join_list = [genename, chr, pos, ref, alt, tag_to_content['ALLELEID'], tag_to_content['RS'],
+                                        tag_to_content['AF_ESP'], tag_to_content['AF_EXAC'], tag_to_content['AF_TGP'],
+                                        tag_to_content['CLNDN'], tag_to_content['CLNHGVS'], tag_to_content['CLNSIG'],
+                                        so[3:], molecular_consequence]
+                    idx = 0
+                    for ele in join_list:
+                        if ele == '':
+                            join_list[idx] = 'N'
+                        idx += 1
+                    new_row = ','.join(join_list)+'\n'
+                    clinvar_table.write(new_row)
         else:
-            chr = pos[:pos.find(':')]
-            start = pos[pos.find(':')+1:pos.find('-')]
-            end = pos[pos.find('-')+1:]
-        if '-' in resistance:
-            resistance = 'NS'
-        if mutation_strand.strip() == '':
-            mutation_strand = 'NS'
-        if snp.strip() == '':
-            snp = 'NS'
-        if prediction.strip() == '':
-            prediction = 'NS'
-        if score.strip() == '':
-            score = '-1'
-        if pubmed.strip() == '':
-            pubmed = 'NS'
-        if id_study.strip() == '':
-            id_study = 'NS'
-        if age.strip() == '':
-            age = '-1\n'
-        new_row = ','.join([genename, accessing_number, cds_length, hgnc_id, sample_name, sample_id, tumor_id,
-                            primary_site, site_sub1, site_sub2 , site_sub3, primary_histology, hist_sub1,
-                            hist_sub2, hist_sub3, genome_wide_screen, mutation_id, mutation_cds, mutation_aa,
-                            mutation_description, mutation_zygosity, log, grch, chr, start, end, mutation_strand,
-                            snp, resistance, prediction, score, mutation_somatic_status, pubmed, id_study, sample_type,
-                            tumor_origin, age])
-output.write(new_row)
+            clinvar_non_genename.write(row)
+clinvar_table.close()
+clinvar_non_genename.close()
+
+gene_to_info = {}
+for row in open('/home/administrator/database/mutation_database/Homo_sapiens.GRCh37.75.gtf-gene_info.gtf','r'):
+    chr, start, end, strand, ensg, genename = row.strip().split('\t')
+    gene_to_info[genename] = ','.join([chr, start, end, ensg]) + ','
+
+# final result
+output = open('/home/administrator/database/mutation_database/clinvar/clinvar_breast_93genes_20180729.csv', 'w')
+output.write('genename,chr,start,end,geneid,pos,ref,alt,alleleid,rs,af_esp,af_exac,af_tgp,clngn,clnhgvs,clnsig\n')
+
+#match_gene = []
+target_genes = []
+for row in open('/home/administrator/database/mutation_database/qiagen_breast_cancer_panel_gene_list.txt', 'r'):
+    target_genes.append(row.strip())
+
+# exist_genes = set()
+for row in open('/home/administrator/database/mutation_database/clinvar/clinvar_table.csv', 'r'):
+    genename = row.split(',')[0]
+    info = ','.join(row.strip().split(',')[1:])
+    if genename in target_genes:
+        infos = genename + ',' + gene_to_info[genename] + info + '\n'
+        output.write(infos)
+#         exist_genes.add(genename)
+output.close()
