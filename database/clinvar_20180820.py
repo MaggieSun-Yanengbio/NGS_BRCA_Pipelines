@@ -35,7 +35,7 @@ for row in open('/home/administrator/database/mutation_database/clinvar/clinvar_
             else:
                 for gene in geneinfo.split('|'):
                     genename = gene[:gene.rfind(':')]
-                    join_list = [genename, chr, pos, ref, alt, tag_to_content['ALLELEID'], tag_to_content['RS'],
+                    join_list = [genename, pos, ref, alt, tag_to_content['ALLELEID'], tag_to_content['RS'],
                                         tag_to_content['AF_ESP'], tag_to_content['AF_EXAC'], tag_to_content['AF_TGP'],
                                         tag_to_content['CLNDN'], tag_to_content['CLNHGVS'], tag_to_content['CLNSIG'],
                                         so[3:], molecular_consequence]
