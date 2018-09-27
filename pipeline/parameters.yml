@@ -49,6 +49,3 @@ nlod_threshold: 3.5
 
 # annotation
 geneinfo: /home/administrator/source/geneid_breast_cancer.csv
-cosmic: /home/administrator/database/cosmic_breast_93genes_20180820.csv
-clinvar: /home/administrator/database/clinvar_breast_93genes_20180729.csv
-g1000: /home/administrator/database/1000genomes_breast_93genes.csv
