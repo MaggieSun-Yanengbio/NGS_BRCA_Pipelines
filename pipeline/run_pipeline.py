@@ -240,8 +240,8 @@ def main():
     annotation_stats_file = y['source'] + y['sample'] + '_annotate_stats.txt'
 
     # annotation process
-    dict_cos, dict_clin, dict_g1000 = read_database(y['cosmic'], y['clinvar'], y['g1000'])
-    annotation(dict_cos,dict_clin,dict_g1000,variant_vcf,annotated_csv,annotation_stats_file)
+    cosmic_ds, clinvar_ds, g1000_ds = fetch_mysql()
+    annotation(cosmic_ds,clinvar_ds,g1000_ds,variant_vcf,annotated_csv,annotation_stats_file)
     fill_table(annotated_csv, y['geneinfo'])
     print ('Finish.')
 
