@@ -27,40 +27,26 @@
 import sys
 import time
 import pandas as pd
+import pymysql
 
 base_paired = {'A':'T', 'T':'A', 'C':'G', 'G':'C'}
 
-def read_database(cosmic,clinvar,g1000):
-    cos = open(cosmic, 'r')
-    dict_cos = {}
-    cos.readline()
-    for db1 in cos.readlines():
-        # if not db.startswith('Gene_name'):
-        gene_name, accession_number, gene_cds_length, hgnc_id, sample_name, id_sample, id_tumour, primary_site, \
-        site_subtype1, site_subtype2, site_subtype3, primary_histology, histology_subtype1, histology_subtype2, \
-        histology_subtype3, genome_wide_screen, mutation_id, mutation_cds, mutation_aa, mutation_description, \
-        mutation_zygosity, loh, grch, chr, start, end, mutation_strand, snp, resistance_mutation, fathmm_prediction, \
-        fathmm_score, mutation_somatic_status, pubmed_pmid, id_study, sample_source, tumor_origin, age = db1.strip().split(',')
-        if mutation_cds is 'NS':
-            continue
-        if 'del' in mutation_cds:
-            change = mutation_cds[mutation_cds.find('del'):]
-        elif 'ins' in mutation_cds:
-            change = mutation_cds[mutation_cds.find('ins'):]
-        elif '>' in mutation_cds:
-            change = mutation_cds[mutation_cds.find('>')-1:]
-        key1 = [chr, start ,change]
-        value1 = [mutation_id, mutation_description, accession_number, gene_name,
-                  mutation_zygosity, loh, fathmm_prediction, fathmm_score,
-                  mutation_somatic_status, pubmed_pmid]
-        dict_cos[','.join(key1)] = ','.join(value1)
+def fetch_mysql():
+    clinvar_ds = {}
+    cosmic_ds = {}
+    g1000_ds = {}
 
-    clin = open(clinvar, 'r')
-    dict_clin = {}
-    clin.readline()
-    for db2 in clin.readlines():
-        genename, chr, start, end, geneid, pos, ref, alt, alleleid, rs, af_esp, af_exac, af_tgp, \
-        clndn, clnhgvs, clnsig, so, molecular_consequence = db2.strip().split(',')
+    connect = pymysql.connect(host = 'localhost',
+                              user = 'root',
+                              passwd = 'admin',
+                              db = 'annotation')
+    cursor = connect.cursor()
+    cursor.execute('use annotation;')
+    cursor.execute('select * from brca_clinvar;')
+    clinvar = cursor.fetchall()
+    for d1 in clinvar:
+        genename, chr, start, end, gene_id, pos, ref, alt, allele_id, rs, af_esp, af_exac, af_tgp, clngn, clnhgvs, \
+        clnsig, so, molecular_consequence, feature_id, exon, hgvs_c, hgvs_p = d1
         if rs is 'N':
             rs = '-'
         if len(ref) == len(alt):
@@ -71,28 +57,53 @@ def read_database(cosmic,clinvar,g1000):
             change = 'ins' + alt[1:]
         else:
             change = 'del' + ref + 'ins' + alt
-        key2 = [chr, pos, change]
-        value2 = [geneid, rs, clndn, clnhgvs, clnsig, so, molecular_consequence]
-        dict_clin[','.join(key2)] = ','.join(value2)
+        k1 = [chr, pos, change]
+        v1 = [gene_id, rs, clngn, clnhgvs, clnsig, so, molecular_consequence]
+        clinvar_ds[','.join(k1)] = ','.join(v1)
 
-    genomes1000 = open(g1000, 'r')
-    dict_g1000 = {}
-    genomes1000.readline()
+    cursor.execute('select * from cosmic;')
+    cosmic = cursor.fetchall()
+    for d2 in cosmic:
+        genename, accessing_number, cds_length, hgnc_id, sample_name, sample_id, tumor_id, primary_site, site_sub1, \
+        site_sub2, site_sub3, primary_histology, hist_sub1, hist_sub2, hist_sub3, genome_wide_screen, mutation_id, \
+        mutation_cds, mutation_aa, mutation_description, mutation_zygosity, loh, grch, chr, start, end, hgvs, \
+        mutation_strand, snp, resistance, prediction, score, mutation_somatic_status, pubmed, id_study, sample_type, \
+        tumor_origin, age = d2
+        if mutation_cds is 'NS':
+            continue
+        if 'del' in mutation_cds:
+            change = mutation_cds[mutation_cds.find('del'):]
+        elif 'ins' in mutation_cds:
+            change = mutation_cds[mutation_cds.find('ins'):]
+        elif '>' in mutation_cds:
+            change = mutation_cds[mutation_cds.find('>')-1:]
+        k2 = [chr, start ,change]
+        v2 = [mutation_id, mutation_description, accessing_number, genename, mutation_zygosity, loh, prediction,
+                  score, mutation_somatic_status, pubmed]
+        cosmic_ds[','.join(k2)] = ','.join(v2)
 
-    for db3 in genomes1000.readlines():
-        genename1, chr1, start1, end1, variant_type, ref1, alt1, rs1, eas_af, eur_af, amr_af, sas_af, afr_af, hgvs1 = db3.strip().split(',')
+    cursor.execute('select * from g1000;')
+    g1000 = cursor.fetchall()
+    for d3 in g1000:
+        genename, chr, start, end, variant_type, ref, alt, rs, eas_af, eur_af, amr_af, sas_af, afr_af, hgvs = d3
         if variant_type == 'SNV':
-            change1 = ref1 + '>' + alt1
+            change = ref + '>' + alt
         elif variant_type == 'insertion':
-            change1 = 'ins' + alt1
+            change = 'ins' + alt
         elif variant_type == 'deletion':
-            change1 = 'del' + ref1
+            change = 'del' + ref
         else:
             pass
-        key3 = [chr1, start1, change1]
-        value3 = [genename1, rs1, eas_af, eur_af, amr_af, sas_af, afr_af]
-        dict_g1000[','.join(key3)] = ','.join(value3)
-    return dict_cos,dict_clin,dict_g1000
+        k3 = [chr, start, change]
+        v3 = [genename, rs, eas_af, eur_af, amr_af, sas_af, afr_af]
+        g1000_ds[','.join(k3)] = ','.join(v3)
+
+    cursor.close()
+    connect.commit()
+    connect.close()
+
+    return cosmic_ds, clinvar_ds, g1000_ds
+
 
 def get_info(tag):
     return tag[tag.find('=')+1:]
