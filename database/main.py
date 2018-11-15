@@ -1,3 +1,6 @@
+# !/usr/bin/python
+# -*- coding: UTF-8 -*-
+# python3.+
 import sys
 import os
 import re
@@ -26,8 +29,10 @@ def define_hgvs(chr, pos, ref, alt):
     version = chr_to_version[chr]
     if int(chr) < 10:
         chr = '0' + chr
+    # snp
     if len(ref) == 1 and len(alt) == 1:
         hgvs = 'NC_0000' + chr + '.' + version + ':g.' + pos + ref + '>' + alt
+    # delete
     elif len(ref) > 1 and len(alt) == 1:
         deletion = ref[1:]
         if len(deletion) == 1:
@@ -35,9 +40,11 @@ def define_hgvs(chr, pos, ref, alt):
         else:
             hgvs = 'NC_0000' + chr + '.' + version + ':g.' + str(int(pos) + 1) + '_' + str(
                 int(pos) + len(deletion)) + 'del' + deletion
+    # insert
     elif len(ref) == 1 and len(alt) > 1:
         insertion = alt[1:]
         hgvs = 'NC_0000' + chr + '.' + version + ':g.' + pos + '_' + str(int(pos) + 1) + 'ins' + insertion
+    # delete xx and insert xx
     else:
         deletion = ref
         insertion = alt
@@ -46,6 +53,7 @@ def define_hgvs(chr, pos, ref, alt):
     return hgvs
 
 
+# get reference base in genomes
 def refbase(samtools, genome, chr, position):
     stdout, stderr = Popen([samtools, 'faidx', genome, 'chr{}:{}-{}'.format(chr, position, position)],
                            stdout=PIPE).communicate()
@@ -53,6 +61,7 @@ def refbase(samtools, genome, chr, position):
     return base
 
 
+# 反向互补
 def reverse_complementary(seq):
     seq = [base_pair[i] for i in seq]
     return reduce(lambda x, y: y + x, seq)
@@ -69,6 +78,7 @@ def login_mysql(host, user, passwd, database):
     return conn, cur
 
 
+# search if exist these informations
 def check_table(cursor, list):
     # check row
     sql = "select * from mutations where HGVS='{}';".format(list[0][1])
@@ -84,30 +94,31 @@ def check_table(cursor, list):
                 pass
             else:
                 sql = "update mutations set {}='{}' where HGVS='{}'".format(i[0], i[1], list[0][1])
-                # sql = "insert into mutations({}) values('{}');".format(i[0], i[1])
                 cursor.execute(sql)
     else:
         sql = "insert into mutations(HGVS) values('{}');".format(list[0][1])
         cursor.execute(sql)
         for i in list[1:]:
             sql = "update mutations set {}='{}' where HGVS='{}'".format(i[0], i[1], list[0][1])
-            # sql = "insert into mutations({}) values('{}');".format(i[0], i[1])
             cursor.execute(sql)
 
-
+            
+#  coordinate transformation: cdna--genomes(brca1)
 def brca1_cdna_to_genomes(exons_position, gene, exon, c_position):
     if int(exon) > 3:
         exon = str(int(exon) - 1)
     exon_start, exon_end, pass_length = exons_position[gene][exon]
+    # cds starts with exon2
     if exon == '2':
         true_pos = str(41277500 - 1368 - 19 - (int(c_position) - 1))
     else:
+        # 基因起始位置 - 该外显子起始位置 - (cds相对位置 - (前面所有外显子长度总和 - (exon1 + exon2不属于cds部分的长度)))
         true_pos = str(41277500 - (int(exon_start) - 1) - ((int(c_position) - 1) - (int(pass_length) - (213 + 19))))
     return true_pos
 
 
+#  coordinate transformation: cdna--genomes(brca2)
 def brca2_cdna_to_genomes(exons_position, gene, exon, c_position):
-
     exon_start, exon_end, pass_length = exons_position[gene][exon]
     if exon == '2':
         true_pos = str(int(exon_start) + 39 + (int(c_position) - 1))
@@ -184,7 +195,7 @@ def update_cosmic(vcf, cursor):
                 if pubmed.strip() == '':
                     pubmed = '-'
                 change = re.split('[\d+]', mutation_cds)[-1]
-                # init
+                # initialization ref and alt
                 ref = False
                 alt = False
                 if '>' in mutation_cds:
@@ -323,26 +334,28 @@ def update_utahdb_brca(csv, exons_position, cursor):
             brca_exons[gene][exon] = [start, end, length]
     for row in open(csv, 'r'):
         if not row.startswith('#'):
-            # print (row)
             gene, exon, tp, change, pro, classfication, post, ref, ref2 = row.strip().split('\t')
+            # BRCA2
             if gene == 'BRCA2' and 'Exon' in exon:
                 chrom = '13'
                 exon = exon.split(' ')[1]
+                # not in exon
                 if '+' in change or '-' in change:
                     continue
+                # snp
                 if '>' in change:
                     p = change[2:change.find('>') - 1]
                     true_pos = brca2_cdna_to_genomes(brca_exons, gene, exon, p)
                     c = change[change.find('>') - 1:]
                     ref, alt = c.split('>')
-
+                # delete and insert
                 elif 'del' in change and 'ins' in change:
                     p = change[2:change.find('del')].split('_')[0]
                     true_pos = brca2_cdna_to_genomes(brca_exons, gene, exon, p)
                     c = change[change.find('del'):]
                     ref, alt = c.split('ins')
                     ref = ref[3:]
-
+                # delete
                 elif 'del' in change:
                     p = change[2:change.find('del')].split('_')[0]
                     true_pos = brca2_cdna_to_genomes(brca_exons, gene, exon, int(p)-1)
@@ -350,14 +363,14 @@ def update_utahdb_brca(csv, exons_position, cursor):
                     last_base = refbase('samtools', '/home/administrator/source/ucsc.hg19.fasta', chrom, true_pos)
                     ref = last_base + c[3:]
                     alt = last_base
-
+                # duplication, 统一写为insert
                 elif 'dup' in change:
                     p = change[2:change.find('dup')].split('_')[-1]
                     true_pos = brca2_cdna_to_genomes(brca_exons, gene, exon, p)
                     c = change[change.find('dup'):]
                     ref = c[-1]
                     alt = ref + c[3:]
-
+                # insert
                 elif 'ins' in change:
                     p = change[2:change.find('ins')].split('_')[0]
                     true_pos = brca2_cdna_to_genomes(brca_exons, gene, exon, p)
@@ -365,13 +378,14 @@ def update_utahdb_brca(csv, exons_position, cursor):
                     last_base = refbase('samtools', '/home/administrator/source/ucsc.hg19.fasta', chrom, true_pos)
                     ref = last_base
                     alt = last_base + c[3:]
+                # 插入或缺失过长，用数字省略序列的过滤
                 if ref.isalpha() and alt.isalpha():
-                    # print (chrom, true_pos, ref, alt)
                     hgvs = define_hgvs(chrom, true_pos, ref, alt)
                     check_table(cursor, [['HGVS', hgvs], ['GENE', gene], ['CHR', chrom], ['POSITION', true_pos],
                                                          ['REF', ref], ['ALT', alt], ['SIGNIFICANCE_UTAHDB', classfication],
                                                          ['REFERENCE1_UTAHDB', ref], ['REFERENCE2_UTAHDB', ref2]])
-
+                    
+            # BRCA1
             elif gene == 'BRCA1' and 'Exon' in exon:
                 chrom = '17'
                 exon = exon.split(' ')[1]
@@ -382,7 +396,6 @@ def update_utahdb_brca(csv, exons_position, cursor):
                     true_pos = brca1_cdna_to_genomes(brca_exons, gene, exon, p)
                     c = change[change.find('>') - 1:]
                     ref, alt = c.split('>')
-                    # ref, alt = [base_pair[i] for i in c.split('>')]
 
                 elif 'del' in change and 'ins' in change:
                     p = change[2:change.find('del')].split('_')[-1]
@@ -390,16 +403,12 @@ def update_utahdb_brca(csv, exons_position, cursor):
                     c = change[change.find('del'):]
                     ref, alt = c.split('ins')
                     ref = ref[3:]
-                    # ref = reverse_complementary(ref[3:])
-                    # alt = reverse_complementary(alt)
 
                 elif 'del' in change:
                     p = change[2:change.find('del')].split('_')[-1]
                     true_pos = brca1_cdna_to_genomes(brca_exons, gene, exon, int(p) + 1)
                     c = change[change.find('del'):]
                     last_base = base_pair[refbase('samtools', '/home/administrator/source/ucsc.hg19.fasta', chrom, true_pos)]
-                    # print (true_pos, last_base,refbase('samtools', '/home/administrator/source/ucsc.hg19.fasta', chrom, true_pos))
-                    # ref = last_base + reverse_complementary(c[3:])
                     ref = c[3:] + last_base
                     alt = last_base
 
@@ -419,10 +428,8 @@ def update_utahdb_brca(csv, exons_position, cursor):
                     alt = c[3:] + last_base
 
                 if ref.isalpha() and alt.isalpha():
-                    # print (ref, alt)
                     ref = reverse_complementary(ref)
                     alt = reverse_complementary(alt)
-                    # print (chrom, true_pos, ref, alt)
                     hgvs = define_hgvs(chrom, true_pos, ref, alt)
                     check_table(cursor, [['HGVS', hgvs], ['GENE', gene], ['CHR', chrom], ['POSITION', true_pos],
                                                          ['REF', ref], ['ALT', alt], ['SIGNIFICANCE_UTAHDB', classfication],
