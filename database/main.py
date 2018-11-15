@@ -444,53 +444,53 @@ def update_cngb(csv, cursor):
 
 def main():
 
-    connect, cursor = login_mysql('localhost', 'root', 'admin', 'annotation')
-    # # BRCA1 and BRCA2 exons position table
-    # exons = '/home/administrator/database/mutation_database/exons_position.csv'
-    # # input: database + vcf path
-    # parameters = sys.argv[1:]
-    # modes = [parameters[i:i + 2] for i in range(0, len(parameters), 2)]
-    # for mode in modes:
-    #     if mode[0] == 'clinvar':
-    #         update_clinvar(mode[1], cursor)
-    #     elif mode[0] == 'cosmic':
-    #         update_cosmic(mode[1], cursor)
-    #     elif mode[0] == '1000genomes':
-    #         update_1000genomes(mode[1], cursor)
-    #     elif mode[0] == 'dbsnp':
-    #         update_dbsnp(mode[1], cursor)
-    #     elif mode[0] == 'evs':
-    #         update_evs(mode[1], cursor)
-    #     elif mode[0] == 'exac':
-    #         update_exac(mode[1], cursor)
-    #     elif mode[0] == 'utahdb':
-    #         update_utahdb_brca(mode[1], exons, cursor)
-    #     elif mode[0] == 'cngb':
-    #         update_cngb(mode[1], cursor)
-    #     else:
-    #         print ('Error input.')
+    connect, cursor = login_mysql('localhost', 'user', 'password', 'database')
+    # BRCA1 and BRCA2 exons position table
+    exons = '/home/administrator/database/mutation_database/exons_position.csv'
+    # input: database + vcf path
+    parameters = sys.argv[1:]
+    modes = [parameters[i:i + 2] for i in range(0, len(parameters), 2)]
+    for mode in modes:
+        if mode[0] == 'clinvar':
+            update_clinvar(mode[1], cursor)
+        elif mode[0] == 'cosmic':
+            update_cosmic(mode[1], cursor)
+        elif mode[0] == '1000genomes':
+            update_1000genomes(mode[1], cursor)
+        elif mode[0] == 'dbsnp':
+            update_dbsnp(mode[1], cursor)
+        elif mode[0] == 'evs':
+            update_evs(mode[1], cursor)
+        elif mode[0] == 'exac':
+            update_exac(mode[1], cursor)
+        elif mode[0] == 'utahdb':
+            update_utahdb_brca(mode[1], exons, cursor)
+        elif mode[0] == 'cngb':
+            update_cngb(mode[1], cursor)
+        else:
+            print ('Error input.')
 
-    vcf = '/home/administrator/database/mutation_database/clinvar/clinvar_20180729.vcf'
-    update_clinvar(vcf, cursor)
-    vcf = '/home/administrator/database/mutation_database/cosmic/CosmicMutantExport_20180820.tsv'
-    update_cosmic(vcf, cursor)
-    vcf = '/home/administrator/database/mutation_database/1000genomes/ALL.chr13.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf'
-    update_1000genomes(vcf, cursor)
-    vcf = '/home/administrator/database/mutation_database/1000genomes/ALL.chr17.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf'
-    update_1000genomes(vcf, cursor)
+#     vcf = '/home/administrator/database/mutation_database/clinvar/clinvar_20180729.vcf'
+#     update_clinvar(vcf, cursor)
+#     vcf = '/home/administrator/database/mutation_database/cosmic/CosmicMutantExport_20180820.tsv'
+#     update_cosmic(vcf, cursor)
+#     vcf = '/home/administrator/database/mutation_database/1000genomes/ALL.chr13.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf'
+#     update_1000genomes(vcf, cursor)
+#     vcf = '/home/administrator/database/mutation_database/1000genomes/ALL.chr17.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf'
+#     update_1000genomes(vcf, cursor)
     # vcf = '/home/administrator/database/mutation_database/dbsnp/All_20170710.vcf'
     # update_dbsnp(vcf, cursor)
-    vcf = '/home/administrator/database/mutation_database/evs/ESP6500SI-V2-SSA137.GRCh38-liftover.chr13.snps_indels.vcf'
-    update_evs(vcf, cursor)
-    vcf = '/home/administrator/database/mutation_database/evs/ESP6500SI-V2-SSA137.GRCh38-liftover.chr17.snps_indels.vcf'
-    update_evs(vcf, cursor)
-    vcf = '/home/administrator/database/mutation_database/exac/exac_brca.vcf'
-    update_exac(vcf, cursor)
-    csv = '/home/administrator/database/mutation_database/arup/arup_brca.tsv'
-    exons = '/home/administrator/database/mutation_database/exons_position.csv'
-    update_utahdb_brca(csv, exons, cursor)
-    csv = '/home/administrator/database/mutation_database/cngb/BRCA.csv'
-    update_cngb(csv, cursor)
+#     vcf = '/home/administrator/database/mutation_database/evs/ESP6500SI-V2-SSA137.GRCh38-liftover.chr13.snps_indels.vcf'
+#     update_evs(vcf, cursor)
+#     vcf = '/home/administrator/database/mutation_database/evs/ESP6500SI-V2-SSA137.GRCh38-liftover.chr17.snps_indels.vcf'
+#     update_evs(vcf, cursor)
+#     vcf = '/home/administrator/database/mutation_database/exac/exac_brca.vcf'
+#     update_exac(vcf, cursor)
+#     csv = '/home/administrator/database/mutation_database/arup/arup_brca.tsv'
+#     exons = '/home/administrator/database/mutation_database/exons_position.csv'
+#     update_utahdb_brca(csv, exons, cursor)
+#     csv = '/home/administrator/database/mutation_database/cngb/BRCA.csv'
+#     update_cngb(csv, cursor)
     cursor.close()
     connect.commit()
     connect.close()
