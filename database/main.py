@@ -301,6 +301,30 @@ def update_evs(vcf, cursor):
                 fg, hgvs_c, hgvs_protein, cds_sizes, gs, ph, ea_age, aa_age, grch38 = info.split(';')
                 for gene in genes:
                     if gene in gl:
+                        if ':' in fg:
+                            fg = fg[fg.find(':') + 1:]
+                        else:
+                            fg = fg[fg.find('=') + 1:]
+                        if ':' in hgvs_c:
+                            hgvs_c = hgvs_c[hgvs_c.find(':') + 1:]
+                        else:
+                            hgvs_c = ':'
+                        if ':' in hgvs_protein:
+                            hgvs_protein = hgvs_protein[hgvs_protein.find(':') + 1:]
+                        else:
+                            hgvs_protein = '-'
+                        if ':' in cds_sizes:
+                            cds_sizes = cds_sizes[cds_sizes.find(':') + 1:]
+                        else:
+                            cds_sizes = '-'
+                        if ':' in ph:
+                            ph = ph[ph.find(':') + 1:]
+                        else:
+                            ph = '-'
+                        if ':' in grch38:
+                            grch38 = grch38[grch38.find(':') + 1:]
+                        else:
+                            grch38 = '-'
                         hgvs = define_hgvs(chrom, pos, ref, alt)
                         check_table(cursor, [['HGVS', hgvs], ['GENE', gene], ['CHR', chrom], ['POSITION', pos],
                                             ['REF', ref], ['ALT', alt], ['MUTATION_DESCRIPTION_EVS', fg],
