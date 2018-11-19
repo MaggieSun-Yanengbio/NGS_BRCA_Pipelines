@@ -334,7 +334,7 @@ def update_utahdb_brca(csv, exons_position, cursor):
             brca_exons[gene][exon] = [start, end, length]
     for row in open(csv, 'r'):
         if not row.startswith('#'):
-            gene, exon, tp, change, pro, classfication, post, ref, ref2 = row.strip().split('\t')
+            gene, exon, tp, change, pro, classfication, post, ref1, ref2 = row.strip().split('\t')
             # BRCA2
             if gene == 'BRCA2' and 'Exon' in exon:
                 chrom = '13'
@@ -383,7 +383,7 @@ def update_utahdb_brca(csv, exons_position, cursor):
                     hgvs = define_hgvs(chrom, true_pos, ref, alt)
                     check_table(cursor, [['HGVS', hgvs], ['GENE', gene], ['CHR', chrom], ['POSITION', true_pos],
                                                          ['REF', ref], ['ALT', alt], ['SIGNIFICANCE_UTAHDB', classfication],
-                                                         ['REFERENCE1_UTAHDB', ref], ['REFERENCE2_UTAHDB', ref2]])
+                                                         ['REFERENCE1_UTAHDB', ref1], ['REFERENCE2_UTAHDB', ref2]])
                     
             # BRCA1
             elif gene == 'BRCA1' and 'Exon' in exon:
@@ -433,7 +433,7 @@ def update_utahdb_brca(csv, exons_position, cursor):
                     hgvs = define_hgvs(chrom, true_pos, ref, alt)
                     check_table(cursor, [['HGVS', hgvs], ['GENE', gene], ['CHR', chrom], ['POSITION', true_pos],
                                                          ['REF', ref], ['ALT', alt], ['SIGNIFICANCE_UTAHDB', classfication],
-                                                         ['REFERENCE1_UTAHDB', ref], ['REFERENCE2_UTAHDB', ref2]])
+                                                         ['REFERENCE1_UTAHDB', ref1], ['REFERENCE2_UTAHDB', ref2]])
     return 0
 
 
