@@ -281,6 +281,14 @@ def update_dbsnp(vcf, cursor):
                 genelist = []
                 chrom, pos, rs, ref, alt, qual, flt, info = row.strip().split('\t')
                 tag_to_content = {i[:i.find('=')]: i[i.find('=') + 1:] for i in info.split(';') if '=' in i}
+                for i in info.split(';'):
+                    if '=' in i:
+                        tag_to_content[i[:i.find('=')]] = i[i.find('=') + 1:]
+                    else:
+                        if i == 'PM':
+                            tag_to_content['PM'] = 'PM'
+                if 'PM' not in tag_to_content:
+                    tag_to_content['PM'] = '-'
                 for g in tag_to_content['GENEINFO'].split('|'):
                     genelist.append(g.split(':')[0])
                 for gene in genes:
@@ -288,7 +296,7 @@ def update_dbsnp(vcf, cursor):
                         for sub_alt in alt.split(','):
                             hgvs = define_hgvs(chrom, pos, ref, sub_alt)
                             check_table(cursor, [['HGVS', hgvs], ['GENE', gene], ['CHR', chrom], ['POSITION', pos],
-                                                ['REF', ref], ['ALT', sub_alt], ['RS_DBSNP', rs]])
+                                                ['REF', ref], ['ALT', sub_alt], ['RS_DBSNP', rs]， ['PM_DBSNP', tag_to_content['PM']]])
     return 0
 
 
@@ -342,10 +350,12 @@ def update_exac(vcf, cursor):
                     tag_to_content = {i[:i.find('=')]: i[i.find('=') + 1:] for i in info.split(';') if '=' in i}
                     for gene in genes:
                         if gene in tag_to_content['CSQ']:
-                            for a in alt.split(','):
-                                hgvs = define_hgvs(chrom, pos, ref, a)
+                            alt = alt.split(',')
+                            af = tag_to_content['AF'].split(',')
+                            for idx in range(len(alt)):
+                                hgvs = define_hgvs(chrom, pos, ref, alt[idx])
                                 check_table(cursor, [['HGVS', hgvs], ['GENE', gene], ['CHR', chrom], ['POSITION', pos],
-                                                     ['REF', ref], ['ALT', a], ['AF_EXAC', tag_to_content['AF']],
+                                                     ['REF', ref], ['ALT', alt[idx]], ['AF_EXAC', af[idx]],
                                                      ['AN_EAS_EXAC', tag_to_content['AN_EAS']]])
     return 0
 
